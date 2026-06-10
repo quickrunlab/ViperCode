@@ -580,9 +580,11 @@ const createBuildConfig = Effect.fn("createBuildConfig")(function* (
     };
     if (signed) {
       winConfig.azureSignOptions = yield* AzureTrustedSigningOptionsConfig;
-    } else {
-      winConfig.signAndEditExecutable = false;
     }
+    // Unsigned builds must still let electron-builder edit the executable:
+    // rcedit embeds the Viper icon + version metadata into the exe, which is
+    // what the taskbar and Start search render. Signing stays disabled via
+    // CSC_IDENTITY_AUTO_DISCOVERY=false in the build env.
     buildConfig.win = winConfig;
   }
 
