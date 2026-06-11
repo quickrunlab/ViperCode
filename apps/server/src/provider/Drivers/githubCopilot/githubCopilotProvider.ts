@@ -102,16 +102,22 @@ export function checkCopilotProviderStatus(input: {
         () => ({ _tag: "unavailable", reason: "GitHub Copilot sign-in is unavailable." }) as const,
       ),
     );
-    if (flow._tag !== "authenticated") {
-      const message =
-        flow._tag === "pending"
-          ? `To sign in, open ${flow.verificationUri} in your browser and enter code ${flow.userCode}.`
-          : flow.reason;
+    if (flow._tag === "pending") {
       return {
         ...baseSnapshot(input),
         status: "warning",
         auth: { status: "unauthenticated" },
-        message,
+        message: `Open ${flow.verificationUri} and enter code ${flow.userCode} to finish signing in.`,
+        deviceAuth: { userCode: flow.userCode, verificationUri: flow.verificationUri },
+        models: [],
+      } satisfies ServerProvider;
+    }
+    if (flow._tag === "unavailable") {
+      return {
+        ...baseSnapshot(input),
+        status: "warning",
+        auth: { status: "unauthenticated" },
+        message: flow.reason,
         models: [],
       } satisfies ServerProvider;
     }

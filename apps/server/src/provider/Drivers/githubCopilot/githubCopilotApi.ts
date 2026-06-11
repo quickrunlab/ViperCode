@@ -137,10 +137,12 @@ export const requestDeviceCode: Effect.Effect<
   HttpClient.HttpClient
 > = Effect.gen(function* () {
   const httpClient = yield* HttpClient.HttpClient;
-  const request = yield* HttpClientRequest.post(DEVICE_CODE_URL).pipe(
+  // GitHub's OAuth endpoints require application/x-www-form-urlencoded; a JSON
+  // body is rejected with HTTP 400.
+  const request = HttpClientRequest.post(DEVICE_CODE_URL).pipe(
     HttpClientRequest.setHeader("Accept", "application/json"),
     applyHeaders(COPILOT_EDITOR_HEADERS),
-    HttpClientRequest.bodyJson({
+    HttpClientRequest.bodyUrlParams({
       client_id: COPILOT_CLIENT_ID,
       scope: COPILOT_OAUTH_SCOPE,
     }),
@@ -163,10 +165,10 @@ export const pollDeviceAccessToken = (
 ): Effect.Effect<DevicePollResult, unknown, HttpClient.HttpClient> =>
   Effect.gen(function* () {
     const httpClient = yield* HttpClient.HttpClient;
-    const request = yield* HttpClientRequest.post(ACCESS_TOKEN_URL).pipe(
+    const request = HttpClientRequest.post(ACCESS_TOKEN_URL).pipe(
       HttpClientRequest.setHeader("Accept", "application/json"),
       applyHeaders(COPILOT_EDITOR_HEADERS),
-      HttpClientRequest.bodyJson({
+      HttpClientRequest.bodyUrlParams({
         client_id: COPILOT_CLIENT_ID,
         device_code: deviceCode,
         grant_type: DEVICE_CODE_GRANT_TYPE,

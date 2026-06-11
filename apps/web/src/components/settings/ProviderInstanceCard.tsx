@@ -672,6 +672,72 @@ export function ProviderInstanceCard({
     <code className="text-xs text-muted-foreground">{versionLabel}</code>
   ) : null;
 
+  // OAuth device-flow sign-in (GitHub Copilot): the server surfaces a
+  // verification URL + one-time code on the snapshot while waiting for the
+  // user to authorize. Render a button that opens an in-app pop-up with a
+  // clickable browser link and the code.
+  const deviceAuth = liveProvider?.deviceAuth;
+  const deviceAuthNode =
+    deviceAuth && liveProvider?.auth.status !== "authenticated" ? (
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button type="button" size="xs" variant="default" className="mt-1">
+              Sign in to GitHub Copilot
+            </Button>
+          }
+        />
+        <PopoverPopup
+          side="bottom"
+          align="start"
+          className="w-[min(22rem,calc(100vw-1.5rem))] [--popup-width:min(22rem,calc(100vw-1.5rem))]"
+        >
+          <div className="grid min-w-0 gap-3">
+            <p className="text-[13px] font-semibold leading-tight text-foreground">
+              Sign in to GitHub Copilot
+            </p>
+            <div className="grid gap-1.5">
+              <p className="text-xs text-muted-foreground">1. Open the GitHub device page:</p>
+              <Button
+                type="button"
+                size="xs"
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                  void window.desktopBridge?.openExternal(deviceAuth.verificationUri);
+                }}
+              >
+                Open {deviceAuth.verificationUri.replace(/^https?:\/\//, "")}
+              </Button>
+            </div>
+            <div className="grid gap-1.5">
+              <p className="text-xs text-muted-foreground">2. Enter this one-time code:</p>
+              <div className="flex min-w-0 items-center gap-1 rounded-md border border-border/70 bg-muted/40 py-1 pr-1 pl-2.5">
+                <code className="flex-1 select-all font-mono text-base font-semibold tracking-[0.2em] text-foreground">
+                  {deviceAuth.userCode}
+                </code>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="size-6 shrink-0 rounded-sm p-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(deviceAuth.userCode);
+                  }}
+                  aria-label="Copy code"
+                >
+                  <CopyIcon className="size-3" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              Viper Code finishes signing in automatically once you authorize in your browser.
+            </p>
+          </div>
+        </PopoverPopup>
+      </Popover>
+    ) : null;
+
   return (
     <div className="border-t border-border/60 first:border-t-0">
       <div className="px-4 py-3.5 sm:px-5">
@@ -778,6 +844,7 @@ export function ProviderInstanceCard({
               {titleTailNode}
             </div>
             {authRowNode}
+            {deviceAuthNode}
           </div>
           <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
             <Button

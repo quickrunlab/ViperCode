@@ -173,6 +173,15 @@ export const ServerProvider = Schema.Struct({
   auth: ServerProviderAuth,
   checkedAt: IsoDateTime,
   message: Schema.optional(TrimmedNonEmptyString),
+  // Populated by OAuth device-flow providers (GitHub Copilot) while waiting
+  // for the user to authorize. Lets the UI render a "Sign in" affordance with
+  // the verification URL and one-time code.
+  deviceAuth: Schema.optional(
+    Schema.Struct({
+      userCode: TrimmedNonEmptyString,
+      verificationUri: TrimmedNonEmptyString,
+    }),
+  ),
   // Optional for back-compat: every legacy producer omits this field and
   // an absent value is interpreted as `"available"` by consumers (see
   // `isProviderAvailable`). New `ProviderInstanceRegistry` outputs set it
