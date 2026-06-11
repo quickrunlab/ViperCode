@@ -89,6 +89,31 @@ describe("GitHub Copilot provider model mapping", () => {
       capabilities: null,
     });
   });
+
+  it("can show packaged Copilot defaults when the live catalog is unavailable", () => {
+    const mapped = mapCopilotModels([], ["gpt-5.5", "custom/copilot"], {
+      includeBuiltIns: true,
+    });
+
+    expect(mapped.slice(0, 4).map((model) => model.slug)).toEqual([
+      "gpt-5.5",
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gpt-5.4-nano",
+    ]);
+    expect(mapped.find((model) => model.slug === "claude-sonnet-4.6")).toMatchObject({
+      name: "Claude Sonnet 4.6",
+      subProvider: "Anthropic",
+      isCustom: false,
+    });
+    expect(mapped.filter((model) => model.slug === "gpt-5.5")).toHaveLength(1);
+    expect(mapped.at(-1)).toEqual({
+      slug: "custom/copilot",
+      name: "custom/copilot",
+      isCustom: true,
+      capabilities: null,
+    });
+  });
 });
 
 describe("GitHub Copilot API helpers", () => {
