@@ -251,10 +251,12 @@ export type ClaudeSettings = typeof ClaudeSettings.Type;
 // only display-level options live here.
 export const GithubCopilotSettings = makeProviderSettingsSchema(
   {
-    // Opt-in: stays disabled (no device-flow polling) until the user enables
-    // the provider, which then surfaces the github.com/login/device code.
+    // Enabled like Codex/Claude: an enabled-but-unauthenticated provider
+    // surfaces the github.com/login/device sign-in code on its card. (A
+    // disabled default would split config.enabled from the instance envelope
+    // and strand the provider in a "disabled" dead-end.)
     enabled: Schema.Boolean.pipe(
-      Schema.withDecodingDefault(Effect.succeed(false)),
+      Schema.withDecodingDefault(Effect.succeed(true)),
       Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
     ),
     customModels: Schema.Array(Schema.String).pipe(
