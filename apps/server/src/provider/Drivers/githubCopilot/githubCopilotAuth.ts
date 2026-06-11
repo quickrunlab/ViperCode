@@ -207,16 +207,24 @@ export const makeGitHubCopilotAuth = (options: {
         } as const;
       }
       const started = yield* withHttp(requestDeviceCode).pipe(
+        Effect.timeout(Duration.seconds(20)),
         Effect.map((device) => ({ ok: true as const, device })),
+        Effect.tapError((cause) =>
+          Effect.logWarning("GitHub Copilot device-code request failed", { cause }),
+        ),
         Effect.catchAll(() => Effect.succeed({ ok: false as const })),
       );
       if (!started.ok) {
         return {
           _tag: "unavailable",
-          reason: "Could not reach GitHub to start sign-in. Check your connection.",
+          reason: "Could not reach GitHub to start sign-in. Check your connection and retry.",
         } as const;
       }
       const device = started.device;
+      yield* Effect.logInfo("GitHub Copilot device code ready", {
+        userCode: device.user_code,
+        verificationUri: device.verification_uri,
+      });
       yield* Ref.set(activeFlowRef, {
         userCode: device.user_code,
         verificationUri: device.verification_uri,

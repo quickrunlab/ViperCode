@@ -139,13 +139,15 @@ export const requestDeviceCode: Effect.Effect<
   const httpClient = yield* HttpClient.HttpClient;
   const request = yield* HttpClientRequest.post(DEVICE_CODE_URL).pipe(
     HttpClientRequest.setHeader("Accept", "application/json"),
+    applyHeaders(COPILOT_EDITOR_HEADERS),
     HttpClientRequest.bodyJson({
       client_id: COPILOT_CLIENT_ID,
       scope: COPILOT_OAUTH_SCOPE,
     }),
   );
   const response = yield* httpClient.execute(request);
-  return yield* HttpClientResponse.schemaBodyJson(DeviceCodeResponse)(response);
+  const ok = yield* HttpClientResponse.filterStatusOk(response);
+  return yield* HttpClientResponse.schemaBodyJson(DeviceCodeResponse)(ok);
 });
 
 // ── Step 2: poll for the ghu_ OAuth token ─────────────────────────────
@@ -163,6 +165,7 @@ export const pollDeviceAccessToken = (
     const httpClient = yield* HttpClient.HttpClient;
     const request = yield* HttpClientRequest.post(ACCESS_TOKEN_URL).pipe(
       HttpClientRequest.setHeader("Accept", "application/json"),
+      applyHeaders(COPILOT_EDITOR_HEADERS),
       HttpClientRequest.bodyJson({
         client_id: COPILOT_CLIENT_ID,
         device_code: deviceCode,
