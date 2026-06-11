@@ -17,7 +17,7 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { HttpClient } from "effect/unstable/http";
 
-import { ServerConfig } from "../../config.ts";
+import { ServerConfig } from "../../../config.ts";
 import { ProviderDriverError } from "../../Errors.ts";
 import { makeManualOnlyProviderMaintenanceCapabilities } from "../../providerMaintenance.ts";
 import { makeManagedServerProvider } from "../../makeManagedServerProvider.ts";

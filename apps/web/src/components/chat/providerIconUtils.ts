@@ -1,10 +1,11 @@
 import { ProviderDriverKind } from "@vipercode/contracts";
-import { ClaudeAI, Icon, OpenAI } from "../Icons";
+import { ClaudeAI, GithubCopilotIcon, Icon, OpenAI } from "../Icons";
 import { PROVIDER_OPTIONS } from "../../session-logic";
 
 export const PROVIDER_ICON_BY_PROVIDER: Partial<Record<ProviderDriverKind, Icon>> = {
   [ProviderDriverKind.make("codex")]: OpenAI,
   [ProviderDriverKind.make("claudeAgent")]: ClaudeAI,
+  [ProviderDriverKind.make("githubCopilot")]: GithubCopilotIcon,
 };
 
 function isAvailableProviderOption(option: (typeof PROVIDER_OPTIONS)[number]): option is {

@@ -8,7 +8,7 @@ import { TextGenerationError } from "@vipercode/contracts";
 import * as Effect from "effect/Effect";
 import { HttpClient } from "effect/unstable/http";
 
-import type { TextGenerationShape } from "../../textGeneration/TextGeneration.ts";
+import type { TextGenerationShape } from "../../../textGeneration/TextGeneration.ts";
 import { createChatCompletion } from "./githubCopilotApi.ts";
 import type { GitHubCopilotAuthShape } from "./githubCopilotAuth.ts";
 

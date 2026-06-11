@@ -88,13 +88,30 @@ export function checkCopilotProviderStatus(input: {
   readonly fetchModels: (token: string) => Effect.Effect<ReadonlyArray<CopilotModel>, unknown>;
 }): Effect.Effect<ServerProvider> {
   return Effect.gen(function* () {
-    const authed = yield* input.auth.isAuthenticated.pipe(Effect.orElseSucceed(() => false));
-    if (!authed) {
+    if (!input.enabled) {
+      return {
+        ...baseSnapshot(input),
+        status: "disabled",
+        auth: { status: "unknown" },
+        models: [],
+      } satisfies ServerProvider;
+    }
+
+    const flow = yield* input.auth.ensureDeviceFlow.pipe(
+      Effect.orElseSucceed(
+        () => ({ _tag: "unavailable", reason: "GitHub Copilot sign-in is unavailable." }) as const,
+      ),
+    );
+    if (flow._tag !== "authenticated") {
+      const message =
+        flow._tag === "pending"
+          ? `To sign in, open ${flow.verificationUri} in your browser and enter code ${flow.userCode}.`
+          : flow.reason;
       return {
         ...baseSnapshot(input),
         status: "warning",
         auth: { status: "unauthenticated" },
-        message: "Sign in to GitHub Copilot to use this provider.",
+        message,
         models: [],
       } satisfies ServerProvider;
     }

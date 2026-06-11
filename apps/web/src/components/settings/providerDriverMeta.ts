@@ -1,6 +1,11 @@
-import { ClaudeSettings, CodexSettings, ProviderDriverKind } from "@vipercode/contracts";
+import {
+  ClaudeSettings,
+  CodexSettings,
+  GithubCopilotSettings,
+  ProviderDriverKind,
+} from "@vipercode/contracts";
 import type * as Schema from "effect/Schema";
-import { ClaudeAI, type Icon, OpenAI } from "../Icons";
+import { ClaudeAI, GithubCopilotIcon, type Icon, OpenAI } from "../Icons";
 
 type ProviderSettingsSchema = {
   readonly fields: Readonly<Record<string, Schema.Top>>;
@@ -39,6 +44,13 @@ export const PROVIDER_CLIENT_DEFINITIONS: readonly ProviderClientDefinition[] = 
     label: "Claude",
     icon: ClaudeAI,
     settingsSchema: ClaudeSettings,
+  },
+  {
+    value: ProviderDriverKind.make("githubCopilot"),
+    label: "GitHub Copilot",
+    icon: GithubCopilotIcon,
+    badgeLabel: "Beta",
+    settingsSchema: GithubCopilotSettings,
   },
 ];
 
