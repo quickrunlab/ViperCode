@@ -16,6 +16,7 @@ import {
   ModelEsque,
   getTriggerDisplayModelLabel,
   getTriggerDisplayModelName,
+  isSelectableModel,
 } from "./providerIconUtils";
 import { setModelPickerOpen } from "../../modelPickerOpenState";
 import type { ProviderInstanceEntry } from "../../providerInstances";
@@ -62,6 +63,10 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
   // option so the trigger icon and label stay in sync instead of showing
   // a stale foreign slug.
   const selectedModel =
+    selectedInstanceOptions.find(
+      (option) => option.slug === props.model && isSelectableModel(option),
+    ) ??
+    selectedInstanceOptions.find(isSelectableModel) ??
     selectedInstanceOptions.find((option) => option.slug === props.model) ??
     selectedInstanceOptions[0];
   const triggerTitle = selectedModel ? getTriggerDisplayModelName(selectedModel) : props.model;

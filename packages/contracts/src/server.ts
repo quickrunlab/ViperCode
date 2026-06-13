@@ -65,6 +65,8 @@ export const ServerProviderModel = Schema.Struct({
   subProvider: Schema.optional(TrimmedNonEmptyString),
   isCustom: Schema.Boolean,
   capabilities: Schema.NullOr(ModelCapabilities),
+  availability: Schema.optional(Schema.Literals(["available", "unavailable"])),
+  unavailableReason: Schema.optional(TrimmedNonEmptyString),
 });
 export type ServerProviderModel = typeof ServerProviderModel.Type;
 

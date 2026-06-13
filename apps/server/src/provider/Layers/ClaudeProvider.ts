@@ -38,6 +38,7 @@ import {
   type ServerProviderDraft,
 } from "../providerSnapshot.ts";
 import { makeClaudeEnvironment } from "../Drivers/ClaudeHome.ts";
+import { withTemporaryModelAvailability } from "../temporaryModelAvailability.ts";
 
 const DEFAULT_CLAUDE_MODEL_CAPABILITIES: ModelCapabilities = createModelCapabilities({
   optionDescriptors: [],
@@ -279,7 +280,7 @@ function getBuiltInClaudeModelsForVersion(
       return supportsClaudeOpus47(version);
     }
     return true;
-  });
+  }).map(withTemporaryModelAvailability);
 }
 
 function formatClaudeFable5UpgradeMessage(version: string | null): string {

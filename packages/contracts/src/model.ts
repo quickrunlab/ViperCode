@@ -136,7 +136,7 @@ export const DEFAULT_GIT_TEXT_GENERATION_MODEL = "gpt-5.4-mini";
 
 export const DEFAULT_MODEL_BY_PROVIDER: Partial<Record<ProviderDriverKind, string>> = {
   [CODEX_DRIVER_KIND]: DEFAULT_MODEL,
-  [CLAUDE_DRIVER_KIND]: "claude-sonnet-4-6",
+  [CLAUDE_DRIVER_KIND]: "claude-opus-4-8",
   [GITHUB_COPILOT_DRIVER_KIND]: "gpt-4o",
 };
 

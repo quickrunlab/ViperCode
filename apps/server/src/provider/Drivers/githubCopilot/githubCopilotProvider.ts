@@ -19,6 +19,7 @@ import * as Result from "effect/Result";
 
 import type { CopilotModel, GitHubCopilotApiError } from "./githubCopilotApi.ts";
 import type { CopilotSession, GitHubCopilotAuthShape } from "./githubCopilotAuth.ts";
+import { withTemporaryModelAvailability } from "../../temporaryModelAvailability.ts";
 
 export const GITHUB_COPILOT_DRIVER_KIND = ProviderDriverKind.make("githubCopilot");
 
@@ -49,11 +50,13 @@ const BUILT_IN_COPILOT_MODELS: ReadonlyArray<ServerProviderModel> = [
   { slug: "gemini-2.5-pro", name: "Gemini 2.5 Pro", subProvider: "Google" },
   { slug: "mai-code-1-flash", name: "MAI-Code-1-Flash", subProvider: "Microsoft" },
   { slug: "raptor-mini", name: "Raptor mini", subProvider: "Fine-tuned GPT-5 mini" },
-].map((model) => ({
-  ...model,
-  isCustom: false,
-  capabilities: DEFAULT_COPILOT_MODEL_CAPABILITIES,
-}));
+]
+  .map((model) => ({
+    ...model,
+    isCustom: false,
+    capabilities: DEFAULT_COPILOT_MODEL_CAPABILITIES,
+  }))
+  .map(withTemporaryModelAvailability);
 
 function isSelectableCopilotModel(model: CopilotModel): boolean {
   const limits = model.capabilities?.limits;
@@ -99,13 +102,13 @@ export function mapCopilotModels(
 ): ReadonlyArray<ServerProviderModel> {
   const fromCatalog = models.filter(isSelectableCopilotModel).map((model): ServerProviderModel => {
     const subProvider = model.vendor ?? model.capabilities?.family;
-    return {
+    return withTemporaryModelAvailability({
       slug: model.id,
       name: model.name && model.name.trim().length > 0 ? model.name : model.id,
       isCustom: false,
       capabilities: mapCopilotModelCapabilities(model),
       ...(subProvider ? { subProvider } : {}),
-    };
+    });
   });
   const catalogSlugs = new Set(fromCatalog.map((model) => model.slug));
   const fromBuiltIns =

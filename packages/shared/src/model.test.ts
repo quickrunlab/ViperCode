@@ -95,7 +95,7 @@ describe("resolveModelSlugForProvider", () => {
       DEFAULT_MODEL,
     );
     expect(resolveModelSlugForProvider(ProviderDriverKind.make("grok"), undefined)).toBe(
-      "grok-build",
+      DEFAULT_MODEL,
     );
   });
 
@@ -120,6 +120,22 @@ describe("resolveSelectableModel", () => {
     );
     expect(resolveSelectableModel(ProviderDriverKind.make("claudeAgent"), "sonnet", options)).toBe(
       "claude-sonnet-4-6",
+    );
+  });
+
+  it("does not resolve unavailable options", () => {
+    const options = [
+      { slug: "claude-fable-5", name: "Claude Fable 5", availability: "unavailable" as const },
+      { slug: "claude-opus-4-8", name: "Claude Opus 4.8" },
+    ];
+    expect(
+      resolveSelectableModel(ProviderDriverKind.make("claudeAgent"), "claude-fable-5", options),
+    ).toBeNull();
+    expect(
+      resolveSelectableModel(ProviderDriverKind.make("claudeAgent"), "Claude Fable 5", options),
+    ).toBeNull();
+    expect(resolveSelectableModel(ProviderDriverKind.make("claudeAgent"), "opus", options)).toBe(
+      "claude-opus-4-8",
     );
   });
 });

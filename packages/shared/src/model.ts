@@ -15,6 +15,7 @@ const DEFAULT_PROVIDER_DRIVER_KIND = ProviderDriverKind.make("codex");
 export interface SelectableModelOption {
   slug: string;
   name: string;
+  availability?: "available" | "unavailable" | undefined;
 }
 
 export function createModelCapabilities(input: {
@@ -266,12 +267,15 @@ export function resolveSelectableModel(
     return null;
   }
 
-  const direct = options.find((option) => option.slug === trimmed);
+  const selectableOptions = options.filter((option) => option.availability !== "unavailable");
+  const direct = selectableOptions.find((option) => option.slug === trimmed);
   if (direct) {
     return direct.slug;
   }
 
-  const byName = options.find((option) => option.name.toLowerCase() === trimmed.toLowerCase());
+  const byName = selectableOptions.find(
+    (option) => option.name.toLowerCase() === trimmed.toLowerCase(),
+  );
   if (byName) {
     return byName.slug;
   }
@@ -281,7 +285,7 @@ export function resolveSelectableModel(
     return null;
   }
 
-  const resolved = options.find((option) => option.slug === normalized);
+  const resolved = selectableOptions.find((option) => option.slug === normalized);
   return resolved ? resolved.slug : null;
 }
 

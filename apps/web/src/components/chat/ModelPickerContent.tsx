@@ -11,7 +11,7 @@ import { ModelPickerSidebar } from "./ModelPickerSidebar";
 import { isModelPickerNewModel } from "./modelPickerModelHighlights";
 import { buildModelPickerSearchText, scoreModelPickerSearch } from "./modelPickerSearch";
 import { Combobox, ComboboxEmpty, ComboboxInput, ComboboxList } from "../ui/combobox";
-import { ModelEsque, PROVIDER_ICON_BY_PROVIDER } from "./providerIconUtils";
+import { ModelEsque, PROVIDER_ICON_BY_PROVIDER, isSelectableModel } from "./providerIconUtils";
 import {
   modelPickerJumpCommandForIndex,
   modelPickerJumpIndexFromCommand,
@@ -29,6 +29,8 @@ type ModelPickerItem = {
   name: string;
   shortName?: string;
   subProvider?: string;
+  availability?: "available" | "unavailable";
+  unavailableReason?: string;
   instanceId: ProviderInstanceId;
   driverKind: ProviderDriverKind;
   instanceDisplayName: string;
@@ -198,6 +200,8 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
           name: model.name,
           ...(model.shortName ? { shortName: model.shortName } : {}),
           ...(model.subProvider ? { subProvider: model.subProvider } : {}),
+          ...(model.availability ? { availability: model.availability } : {}),
+          ...(model.unavailableReason ? { unavailableReason: model.unavailableReason } : {}),
           instanceId,
           driverKind: entry.driverKind,
           instanceDisplayName: entry.displayName,
@@ -343,6 +347,10 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
       if (!entry) {
         return;
       }
+      const candidate = options.find((option) => option.slug === modelSlug);
+      if (candidate && !isSelectableModel(candidate)) {
+        return;
+      }
       // `resolveSelectableModel` uses the driver kind for normalization
       // (slug casing etc.). Custom instances share their driver's
       // normalization rules, so pass the driver kind here.
@@ -392,8 +400,13 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
       string,
       NonNullable<ReturnType<typeof modelPickerJumpCommandForIndex>>
     >();
-    for (const [visibleModelIndex, model] of filteredModels.entries()) {
-      const jumpCommand = modelPickerJumpCommandForIndex(visibleModelIndex);
+    let visibleSelectableModelIndex = 0;
+    for (const model of filteredModels) {
+      if (!isSelectableModel(model)) {
+        continue;
+      }
+      const jumpCommand = modelPickerJumpCommandForIndex(visibleSelectableModelIndex);
+      visibleSelectableModelIndex += 1;
       if (!jumpCommand) {
         return mapping;
       }
@@ -637,6 +650,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
                       useTriggerLabel={isLocked && !showLockedInstanceSidebar}
                       showNewBadge={isModelPickerNewModel(model.driverKind, model.slug)}
                       jumpLabel={modelJumpLabelByKey.get(modelKey) ?? null}
+                      disabled={!isSelectableModel(model)}
                       onToggleFavorite={() => toggleFavorite(model.instanceId, model.slug)}
                     />
                   );

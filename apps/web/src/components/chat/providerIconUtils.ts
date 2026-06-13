@@ -24,7 +24,13 @@ export type ModelEsque = {
   name: string;
   shortName?: string | undefined;
   subProvider?: string | undefined;
+  availability?: "available" | "unavailable" | undefined;
+  unavailableReason?: string | undefined;
 };
+
+export function isSelectableModel(model: ModelEsque): boolean {
+  return model.availability !== "unavailable";
+}
 
 export function getDisplayModelName(
   model: ModelEsque,

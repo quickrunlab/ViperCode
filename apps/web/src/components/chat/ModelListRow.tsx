@@ -6,6 +6,7 @@ import {
   getTriggerDisplayModelLabel,
   type ModelEsque,
   PROVIDER_ICON_BY_PROVIDER,
+  isSelectableModel,
 } from "./providerIconUtils";
 import { ComboboxItem } from "../ui/combobox";
 import { Kbd } from "../ui/kbd";
@@ -32,6 +33,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
   useTriggerLabel?: boolean;
   showNewBadge?: boolean;
   jumpLabel?: string | null;
+  disabled?: boolean;
   onToggleFavorite: () => void;
 }) {
   const ProviderIcon = PROVIDER_ICON_BY_PROVIDER[props.driverKind] ?? null;
@@ -41,6 +43,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
 
   return (
     <ComboboxItem
+      disabled={props.disabled}
       hideIndicator
       index={props.index}
       value={`${props.instanceId}:${props.model.slug}`}
@@ -48,6 +51,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
       className={cn(
         "w-full cursor-pointer rounded px-3 py-2 transition-colors group",
         "data-highlighted:bg-muted data-selected:bg-accent data-selected:text-foreground",
+        props.disabled && "cursor-not-allowed opacity-55 grayscale",
       )}
     >
       <Tooltip>
@@ -93,6 +97,14 @@ export const ModelListRow = memo(function ModelListRow(props: {
                 aria-label="New model"
               >
                 New
+              </span>
+            ) : null}
+            {!isSelectableModel(props.model) ? (
+              <span
+                className="shrink-0 rounded border border-red-500/45 bg-red-500/15 px-1 py-px text-[10px] font-bold uppercase leading-none tracking-wide text-red-700 dark:border-red-400/35 dark:bg-red-400/12 dark:text-red-200"
+                aria-label={props.model.unavailableReason ?? "Unavailable model"}
+              >
+                Unavailable
               </span>
             ) : null}
           </div>

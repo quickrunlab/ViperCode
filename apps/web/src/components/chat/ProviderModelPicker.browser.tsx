@@ -1078,6 +1078,66 @@ describe("ProviderModelPicker", () => {
     }
   });
 
+  it("renders unavailable models as disabled and does not select them", async () => {
+    const claudeProvider = TEST_PROVIDERS.find(
+      (provider) => provider.instanceId === CLAUDE_INSTANCE_ID,
+    )!;
+    const providers: ReadonlyArray<ServerProvider> = [
+      TEST_PROVIDERS[0]!,
+      {
+        ...claudeProvider,
+        models: [
+          {
+            slug: "claude-fable-5",
+            name: "Claude Fable 5",
+            isCustom: false,
+            availability: "unavailable",
+            unavailableReason: "Temporarily unavailable.",
+            capabilities: createModelCapabilities({ optionDescriptors: [] }),
+          },
+          {
+            slug: "claude-opus-4-8",
+            name: "Claude Opus 4.8",
+            isCustom: false,
+            capabilities: createModelCapabilities({ optionDescriptors: [] }),
+          },
+        ],
+      },
+    ];
+    const mounted = await mountPicker({
+      activeInstanceId: CLAUDE_INSTANCE_ID,
+      model: "claude-fable-5",
+      lockedProvider: ProviderDriverKind.make("claudeAgent"),
+      providers,
+    });
+
+    try {
+      await page.getByRole("button").click();
+
+      await vi.waitFor(() => {
+        const text = getModelPickerListText();
+        expect(text).toContain("Claude Fable 5");
+        expect(text).toContain("Unavailable");
+      });
+
+      const fableRow = Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).find(
+        (element) => element.textContent?.includes("Claude Fable 5"),
+      );
+      expect(fableRow).not.toBeNull();
+      expect(fableRow?.hasAttribute("data-disabled")).toBe(true);
+
+      fableRow?.click();
+      expect(mounted.onProviderModelChange).not.toHaveBeenCalled();
+
+      const triggerLabel = document.querySelector<HTMLElement>(
+        '[data-chat-provider-model-picker="true"]',
+      )?.textContent;
+      expect(triggerLabel).toContain("Claude Opus 4.8");
+    } finally {
+      await mounted.cleanup();
+    }
+  });
+
   it("only shows codex spark when the server reports it", async () => {
     const providersWithoutSpark: ReadonlyArray<ServerProvider> = [
       buildCodexProvider([

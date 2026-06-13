@@ -75,6 +75,8 @@ export interface AppModelOption {
   shortName?: string;
   subProvider?: string;
   isCustom: boolean;
+  availability?: "available" | "unavailable";
+  unavailableReason?: string;
 }
 
 function toAppModelOption(model: ServerProvider["models"][number]): AppModelOption {
@@ -85,6 +87,8 @@ function toAppModelOption(model: ServerProvider["models"][number]): AppModelOpti
   };
   if (model.shortName) option.shortName = model.shortName;
   if (model.subProvider) option.subProvider = model.subProvider;
+  if (model.availability) option.availability = model.availability;
+  if (model.unavailableReason) option.unavailableReason = model.unavailableReason;
   return option;
 }
 
@@ -249,8 +253,8 @@ export function resolveAppModelSelectionForInstance(
   const options = getAppModelOptionsForInstance(settings, entry);
   return (
     resolveSelectableModel(entry.driverKind, selectedModel, options) ??
-    options[0]?.slug ??
-    entry.models[0]?.slug ??
+    options.find((option) => option.availability !== "unavailable")?.slug ??
+    entry.models.find((model) => model.availability !== "unavailable")?.slug ??
     null
   );
 }
