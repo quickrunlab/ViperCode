@@ -14,7 +14,9 @@ export interface RelayDatabase extends EffectPgDatabase {
   readonly $client: PgClient;
 }
 
-export class RelayDb extends Context.Service<RelayDb, RelayDatabase>()("vipercode-relay/db/RelayDb") {}
+export class RelayDb extends Context.Service<RelayDb, RelayDatabase>()(
+  "vipercode-relay/db/RelayDb",
+) {}
 
 export const PlanetscaleDatabase = Effect.gen(function* () {
   const { stage } = yield* Alchemy.Stack;

@@ -106,8 +106,8 @@ stored PKCE token model.
 
 In **Clerk Dashboard > JWT templates**, create a template with:
 
-| Setting | Value                        |
-| ------- | ---------------------------- |
+| Setting | Value                           |
+| ------- | ------------------------------- |
 | Name    | `viper-relay`                   |
 | Claims  | `{ "aud": "viper-code-relay" }` |
 

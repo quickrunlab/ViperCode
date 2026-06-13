@@ -23,9 +23,9 @@ const sourceControlProviderRegistryTestLayer = (input: {
   SourceControlProviderRegistry.layer.pipe(
     Layer.provide(
       Layer.mergeAll(
-        ServerConfig.layerTest(process.cwd(), { prefix: "viper-source-control-registry-test-" }).pipe(
-          Layer.provide(NodeServices.layer),
-        ),
+        ServerConfig.layerTest(process.cwd(), {
+          prefix: "viper-source-control-registry-test-",
+        }).pipe(Layer.provide(NodeServices.layer)),
         Layer.mock(AzureDevOpsCli.AzureDevOpsCli)({}),
         Layer.mock(BitbucketApi.BitbucketApi)(input.bitbucket),
         Layer.mock(GitHubCli.GitHubCli)({}),

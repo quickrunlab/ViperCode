@@ -20,9 +20,9 @@ describe("isTransportConnectionErrorMessage", () => {
   });
 
   it("returns true for the Viper server WebSocket message", () => {
-    expect(isTransportConnectionErrorMessage("Unable to connect to the Viper server WebSocket.")).toBe(
-      true,
-    );
+    expect(
+      isTransportConnectionErrorMessage("Unable to connect to the Viper server WebSocket."),
+    ).toBe(true);
   });
 
   it("returns true for ping timeout", () => {

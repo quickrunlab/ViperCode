@@ -63,4 +63,4 @@ export interface ProjectionStateRepositoryShape {
 export class ProjectionStateRepository extends Context.Service<
   ProjectionStateRepository,
   ProjectionStateRepositoryShape
->()("viper/persistence/Services/ProjectionState/ProjectionStateRepository") {}
+>()("vipercode/persistence/Services/ProjectionState/ProjectionStateRepository") {}

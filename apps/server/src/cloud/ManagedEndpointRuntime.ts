@@ -36,7 +36,7 @@ export interface CloudManagedEndpointRuntimeShape {
 export class CloudManagedEndpointRuntime extends Context.Service<
   CloudManagedEndpointRuntime,
   CloudManagedEndpointRuntimeShape
->()("viper/cloud/ManagedEndpointRuntime/CloudManagedEndpointRuntime") {}
+>()("vipercode/cloud/ManagedEndpointRuntime/CloudManagedEndpointRuntime") {}
 
 export type CloudManagedEndpointRuntimeStatus =
   | {

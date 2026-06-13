@@ -90,7 +90,7 @@ export interface ProcessRunnerShape {
 }
 
 export class ProcessRunner extends Context.Service<ProcessRunner, ProcessRunnerShape>()(
-  "viper/processRunner",
+  "vipercode/processRunner",
 ) {}
 
 const DEFAULT_TIMEOUT = "60 seconds";

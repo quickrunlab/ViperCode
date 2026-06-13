@@ -146,5 +146,5 @@ export interface TerminalManagerShape {
  * TerminalManager - Service tag for terminal session orchestration.
  */
 export class TerminalManager extends Context.Service<TerminalManager, TerminalManagerShape>()(
-  "viper/terminal/Services/Manager/TerminalManager",
+  "vipercode/terminal/Services/Manager/TerminalManager",
 ) {}

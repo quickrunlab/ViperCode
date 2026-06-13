@@ -26,7 +26,7 @@ export interface AnalyticsServiceShape {
 }
 
 export class AnalyticsService extends Context.Service<AnalyticsService, AnalyticsServiceShape>()(
-  "viper/telemetry/Services/AnalyticsService",
+  "vipercode/telemetry/Services/AnalyticsService",
 ) {
   static readonly layerTest = Layer.succeed(AnalyticsService, {
     record: () => Effect.void,

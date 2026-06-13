@@ -38,4 +38,4 @@ export interface ProviderRuntimeIngestionShape {
 export class ProviderRuntimeIngestionService extends Context.Service<
   ProviderRuntimeIngestionService,
   ProviderRuntimeIngestionShape
->()("viper/orchestration/Services/ProviderRuntimeIngestion/ProviderRuntimeIngestionService") {}
+>()("vipercode/orchestration/Services/ProviderRuntimeIngestion/ProviderRuntimeIngestionService") {}

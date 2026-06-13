@@ -1852,7 +1852,9 @@ function ConfiguredCloudRemoteEnvironmentRows({
         type: "error",
         title: "Could not connect environment",
         description:
-          cause instanceof Error ? cause.message : "Could not connect the Viper Connect environment.",
+          cause instanceof Error
+            ? cause.message
+            : "Could not connect the Viper Connect environment.",
       });
     } finally {
       setConnectingEnvironmentId(null);

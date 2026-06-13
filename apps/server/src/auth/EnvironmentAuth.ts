@@ -182,7 +182,7 @@ export interface EnvironmentAuthShape {
 }
 
 export class EnvironmentAuth extends Context.Service<EnvironmentAuth, EnvironmentAuthShape>()(
-  "viper/auth/EnvironmentAuth",
+  "vipercode/auth/EnvironmentAuth",
 ) {}
 
 type BootstrapExchangeResult = {

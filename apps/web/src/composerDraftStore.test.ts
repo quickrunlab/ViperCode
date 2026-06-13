@@ -1096,9 +1096,7 @@ describe("composerDraftStore modelSelection", () => {
         reasoning: "high",
       }),
     );
-    expect(
-      useComposerDraftStore.getState().stickyModelSelectionByProvider[GROK_INSTANCE],
-    ).toEqual(
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[GROK_INSTANCE]).toEqual(
       modelSelection(GROK_DRIVER, "gpt-5.4", {
         reasoning: "high",
       }),
@@ -1338,9 +1336,9 @@ describe("composerDraftStore sticky composer settings", () => {
       }),
     );
 
-    expect(
-      useComposerDraftStore.getState().stickyModelSelectionByProvider[GROK_INSTANCE],
-    ).toEqual(modelSelection(GROK_DRIVER, "gpt-5.4"));
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[GROK_INSTANCE]).toEqual(
+      modelSelection(GROK_DRIVER, "gpt-5.4"),
+    );
     expect(useComposerDraftStore.getState().stickyActiveProvider).toBe("grok");
   });
 

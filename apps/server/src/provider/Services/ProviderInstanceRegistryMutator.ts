@@ -49,4 +49,4 @@ export interface ProviderInstanceRegistryMutatorShape {
 export class ProviderInstanceRegistryMutator extends Context.Service<
   ProviderInstanceRegistryMutator,
   ProviderInstanceRegistryMutatorShape
->()("viper/provider/Services/ProviderInstanceRegistryMutator") {}
+>()("vipercode/provider/Services/ProviderInstanceRegistryMutator") {}

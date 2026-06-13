@@ -92,4 +92,4 @@ export interface ProjectionThreadMessageRepositoryShape {
 export class ProjectionThreadMessageRepository extends Context.Service<
   ProjectionThreadMessageRepository,
   ProjectionThreadMessageRepositoryShape
->()("viper/persistence/Services/ProjectionThreadMessages/ProjectionThreadMessageRepository") {}
+>()("vipercode/persistence/Services/ProjectionThreadMessages/ProjectionThreadMessageRepository") {}

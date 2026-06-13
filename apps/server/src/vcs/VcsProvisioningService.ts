@@ -17,7 +17,7 @@ export interface VcsProvisioningServiceShape {
 export class VcsProvisioningService extends Context.Service<
   VcsProvisioningService,
   VcsProvisioningServiceShape
->()("viper/vcs/VcsProvisioningService") {}
+>()("vipercode/vcs/VcsProvisioningService") {}
 
 function resolveRequestedKind(
   kind: VcsDriverKind | undefined,

@@ -39,6 +39,7 @@ export const PROVIDER_OPTIONS: Array<{
     available: true,
     pickerSidebarBadge: "new",
   },
+  { value: ProviderDriverKind.make("opencode"), label: "OpenCode", available: true },
 ];
 
 export interface WorkLogEntry {

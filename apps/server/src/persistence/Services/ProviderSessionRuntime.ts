@@ -89,4 +89,4 @@ export interface ProviderSessionRuntimeRepositoryShape {
 export class ProviderSessionRuntimeRepository extends Context.Service<
   ProviderSessionRuntimeRepository,
   ProviderSessionRuntimeRepositoryShape
->()("viper/persistence/Services/ProviderSessionRuntime/ProviderSessionRuntimeRepository") {}
+>()("vipercode/persistence/Services/ProviderSessionRuntime/ProviderSessionRuntimeRepository") {}

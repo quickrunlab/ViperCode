@@ -160,8 +160,16 @@ function createBaseServerConfig(): ServerConfig {
         githubCopilot: {
           enabled: true,
           customModels: [],
+          cliPath: "copilot",
           oauthClientId: "",
           enterpriseUrl: "",
+        },
+        opencode: {
+          enabled: true,
+          binaryPath: "opencode",
+          serverUrl: "",
+          serverPassword: "",
+          customModels: [],
         },
       },
     },

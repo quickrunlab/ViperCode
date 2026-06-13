@@ -1476,12 +1476,7 @@ export const websocketRpcRouteLayer = Layer.unwrap(
                 SourceControlDiscoveryLayer.layer.pipe(
                   Layer.provide(
                     SourceControlProviderRegistry.layer.pipe(
-                      Layer.provide(
-                        Layer.mergeAll(
-                          GitHubCli.layer,
-                          GitLabCli.layer,
-                        ),
-                      ),
+                      Layer.provide(Layer.mergeAll(GitHubCli.layer, GitLabCli.layer)),
                       Layer.provideMerge(GitVcsDriver.layer),
                       Layer.provide(
                         VcsDriverRegistry.layer.pipe(Layer.provide(VcsProjectConfig.layer)),

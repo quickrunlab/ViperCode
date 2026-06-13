@@ -231,7 +231,10 @@ it.layer(NodeServices.layer)("bin cli parsing", (it) => {
       assert.include(output, "Viper Connect\n  Exposure: disabled");
       assert.include(output, "  Authorization: missing");
       assert.include(output, "  Environment link: not provisioned");
-      assert.include(output, "Next: Run `viper connect link` to authorize and enable Viper Connect.");
+      assert.include(
+        output,
+        "Next: Run `viper connect link` to authorize and enable Viper Connect.",
+      );
     }),
   );
 

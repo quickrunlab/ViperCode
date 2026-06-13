@@ -77,5 +77,5 @@ export interface ProviderRegistryShape {
 }
 
 export class ProviderRegistry extends Context.Service<ProviderRegistry, ProviderRegistryShape>()(
-  "viper/provider/Services/ProviderRegistry",
+  "vipercode/provider/Services/ProviderRegistry",
 ) {}

@@ -29,4 +29,4 @@ export interface OrchestrationReactorShape {
 export class OrchestrationReactor extends Context.Service<
   OrchestrationReactor,
   OrchestrationReactorShape
->()("viper/orchestration/Services/OrchestrationReactor") {}
+>()("vipercode/orchestration/Services/OrchestrationReactor") {}

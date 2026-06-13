@@ -24,7 +24,7 @@ export interface ServerLifecycleEventsShape {
 export class ServerLifecycleEvents extends Context.Service<
   ServerLifecycleEvents,
   ServerLifecycleEventsShape
->()("viper/serverLifecycleEvents") {}
+>()("vipercode/serverLifecycleEvents") {}
 
 export const ServerLifecycleEventsLive = Layer.effect(
   ServerLifecycleEvents,

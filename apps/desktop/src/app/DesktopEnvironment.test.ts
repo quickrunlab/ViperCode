@@ -56,7 +56,10 @@ describe("DesktopEnvironment", () => {
       assert.equal(environment.stateDir, "/tmp/viper/dev");
       assert.equal(environment.desktopSettingsPath, "/tmp/viper/dev/desktop-settings.json");
       assert.equal(environment.clientSettingsPath, "/tmp/viper/dev/client-settings.json");
-      assert.equal(environment.savedEnvironmentRegistryPath, "/tmp/viper/dev/saved-environments.json");
+      assert.equal(
+        environment.savedEnvironmentRegistryPath,
+        "/tmp/viper/dev/saved-environments.json",
+      );
       assert.equal(environment.serverSettingsPath, "/tmp/viper/dev/settings.json");
       assert.equal(environment.logDir, "/tmp/viper/dev/logs");
       assert.equal(environment.rootDir, "/repo");
@@ -69,7 +72,10 @@ describe("DesktopEnvironment", () => {
         Option.map(environment.devServerUrl, (url) => url.href),
         Option.some("http://localhost:5173/"),
       );
-      assert.deepEqual(environment.devRemoteViperServerEntryPath, Option.some("/remote/server.mjs"));
+      assert.deepEqual(
+        environment.devRemoteViperServerEntryPath,
+        Option.some("/remote/server.mjs"),
+      );
       assert.deepEqual(environment.configuredBackendPort, Option.some(4949));
       assert.deepEqual(environment.commitHashOverride, Option.some("0123456789abcdef"));
       assert.deepEqual(environment.otlpTracesUrl, Option.some("http://127.0.0.1:4318/v1/traces"));

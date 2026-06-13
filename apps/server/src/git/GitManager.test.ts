@@ -426,7 +426,8 @@ function createGitHubCliWithFakeGh(scenario: FakeGhScenario = {}): {
     if (args[0] === "pr" && args[1] === "create") {
       return Effect.succeed(
         fakeGhOutput(
-          (scenario.createdPrUrl ?? "https://github.com/viperisuseful/codething-mvp/pull/101") + "\n",
+          (scenario.createdPrUrl ?? "https://github.com/viperisuseful/codething-mvp/pull/101") +
+            "\n",
         ),
       );
     }
@@ -1195,7 +1196,9 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
           false,
         );
         expect(
-          ghCalls.some((call) => call.includes("pr list --head viperisuseful:upstream/effect-atom ")),
+          ghCalls.some((call) =>
+            call.includes("pr list --head viperisuseful:upstream/effect-atom "),
+          ),
         ).toBe(false);
         expect(
           ghCalls.some((call) =>

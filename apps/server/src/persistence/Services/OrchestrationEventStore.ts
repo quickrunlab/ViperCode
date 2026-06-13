@@ -68,4 +68,4 @@ export interface OrchestrationEventStoreShape {
 export class OrchestrationEventStore extends Context.Service<
   OrchestrationEventStore,
   OrchestrationEventStoreShape
->()("viper/persistence/Services/OrchestrationEventStore") {}
+>()("vipercode/persistence/Services/OrchestrationEventStore") {}

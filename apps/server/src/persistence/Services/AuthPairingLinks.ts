@@ -79,4 +79,4 @@ export interface AuthPairingLinkRepositoryShape {
 export class AuthPairingLinkRepository extends Context.Service<
   AuthPairingLinkRepository,
   AuthPairingLinkRepositoryShape
->()("viper/persistence/Services/AuthPairingLinks/AuthPairingLinkRepository") {}
+>()("vipercode/persistence/Services/AuthPairingLinks/AuthPairingLinkRepository") {}

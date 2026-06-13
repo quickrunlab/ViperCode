@@ -27,4 +27,4 @@ export interface ProjectFaviconResolverShape {
 export class ProjectFaviconResolver extends Context.Service<
   ProjectFaviconResolver,
   ProjectFaviconResolverShape
->()("viper/project/Services/ProjectFaviconResolver") {}
+>()("vipercode/project/Services/ProjectFaviconResolver") {}

@@ -78,4 +78,4 @@ export interface ProjectionProjectRepositoryShape {
 export class ProjectionProjectRepository extends Context.Service<
   ProjectionProjectRepository,
   ProjectionProjectRepositoryShape
->()("viper/persistence/Services/ProjectionProjects/ProjectionProjectRepository") {}
+>()("vipercode/persistence/Services/ProjectionProjects/ProjectionProjectRepository") {}

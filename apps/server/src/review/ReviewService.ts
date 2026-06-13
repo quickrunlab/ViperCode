@@ -24,7 +24,7 @@ export interface ReviewServiceShape {
 }
 
 export class ReviewService extends Context.Service<ReviewService, ReviewServiceShape>()(
-  "viper/review/ReviewService",
+  "vipercode/review/ReviewService",
 ) {}
 
 export const make = Effect.fn("makeReviewService")(function* () {

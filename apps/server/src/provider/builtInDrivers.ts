@@ -26,6 +26,7 @@ import {
   GitHubCopilotDriver,
   type GitHubCopilotDriverEnv,
 } from "./Drivers/githubCopilot/GitHubCopilotDriver.ts";
+import { OpenCodeDriver, type OpenCodeDriverEnv } from "./Drivers/OpenCodeDriver.ts";
 import type { AnyProviderDriver } from "./ProviderDriver.ts";
 
 /**
@@ -33,7 +34,11 @@ import type { AnyProviderDriver } from "./ProviderDriver.ts";
  * driver. The registry layer declares `R = BuiltInDriversEnv`; the runtime
  * layer must provide every service in this union.
  */
-export type BuiltInDriversEnv = ClaudeDriverEnv | CodexDriverEnv | GitHubCopilotDriverEnv;
+export type BuiltInDriversEnv =
+  | ClaudeDriverEnv
+  | CodexDriverEnv
+  | GitHubCopilotDriverEnv
+  | OpenCodeDriverEnv;
 
 /**
  * Ordered list of built-in drivers. Order matters only for tie-breaking in
@@ -44,4 +49,5 @@ export const BUILT_IN_DRIVERS: ReadonlyArray<AnyProviderDriver<BuiltInDriversEnv
   CodexDriver,
   ClaudeDriver,
   GitHubCopilotDriver,
+  OpenCodeDriver,
 ];

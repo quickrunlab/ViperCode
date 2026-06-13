@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { ProjectId, ProviderInstanceId, ThreadId } from "@vipercode/contracts";
-import type { OrchestrationShellSnapshot, OrchestrationShellStreamEvent } from "@vipercode/contracts";
+import type {
+  OrchestrationShellSnapshot,
+  OrchestrationShellStreamEvent,
+} from "@vipercode/contracts";
 
 import { applyShellStreamEvent } from "./shellSnapshotReducer.ts";
 

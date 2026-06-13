@@ -35,4 +35,4 @@ export interface ThreadDeletionReactorShape {
 export class ThreadDeletionReactor extends Context.Service<
   ThreadDeletionReactor,
   ThreadDeletionReactorShape
->()("viper/orchestration/Services/ThreadDeletionReactor") {}
+>()("vipercode/orchestration/Services/ThreadDeletionReactor") {}

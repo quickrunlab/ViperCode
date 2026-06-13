@@ -121,7 +121,9 @@ const withIdentity = <A, E, R>(
         Layer.provideMerge(
           FileSystem.layerNoop({
             exists: (path) =>
-              Effect.succeed(input.legacyPathExists === true && path.includes("Viper Code (Alpha)")),
+              Effect.succeed(
+                input.legacyPathExists === true && path.includes("Viper Code (Alpha)"),
+              ),
             readFileString: () =>
               Effect.succeed(input.packageJson ?? '{"vipercodeCommitHash":"abcdef1234567890"}'),
           }),

@@ -12,4 +12,4 @@ export interface ProviderSessionReaperShape {
 export class ProviderSessionReaper extends Context.Service<
   ProviderSessionReaper,
   ProviderSessionReaperShape
->()("viper/provider/Services/ProviderSessionReaper") {}
+>()("vipercode/provider/Services/ProviderSessionReaper") {}

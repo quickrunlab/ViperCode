@@ -48,4 +48,4 @@ export interface WorkspaceFileSystemShape {
 export class WorkspaceFileSystem extends Context.Service<
   WorkspaceFileSystem,
   WorkspaceFileSystemShape
->()("viper/workspace/Services/WorkspaceFileSystem") {}
+>()("vipercode/workspace/Services/WorkspaceFileSystem") {}

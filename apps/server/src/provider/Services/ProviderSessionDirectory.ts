@@ -67,4 +67,4 @@ export interface ProviderSessionDirectoryShape {
 export class ProviderSessionDirectory extends Context.Service<
   ProviderSessionDirectory,
   ProviderSessionDirectoryShape
->()("viper/provider/Services/ProviderSessionDirectory") {}
+>()("vipercode/provider/Services/ProviderSessionDirectory") {}

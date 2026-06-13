@@ -96,10 +96,7 @@ interface PendingDefaultBranchAction {
   filePaths?: string[];
 }
 
-type PublishProviderKind = Extract<
-  SourceControlProviderKind,
-  "github" | "gitlab"
->;
+type PublishProviderKind = Extract<SourceControlProviderKind, "github" | "gitlab">;
 
 type GitActionToastId = ReturnType<typeof toastManager.add>;
 

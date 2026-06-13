@@ -696,8 +696,12 @@ it.layer(NodeServices.layer)("isCommandAvailable", (it) => {
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const firstDir = yield* fs.makeTempDirectoryScoped({ prefix: "viper-external-launcher-test-" });
-      const secondDir = yield* fs.makeTempDirectoryScoped({ prefix: "viper-external-launcher-test-" });
+      const firstDir = yield* fs.makeTempDirectoryScoped({
+        prefix: "viper-external-launcher-test-",
+      });
+      const secondDir = yield* fs.makeTempDirectoryScoped({
+        prefix: "viper-external-launcher-test-",
+      });
       yield* fs.writeFileString(path.join(firstDir, "code.CMD"), "@echo off\r\n");
       yield* fs.writeFileString(path.join(secondDir, "code.CMD"), "MZ");
       const env = {

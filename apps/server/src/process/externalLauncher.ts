@@ -257,7 +257,7 @@ export interface ExternalLauncherShape {
  * ExternalLauncher - Service tag for browser/editor launch operations.
  */
 export class ExternalLauncher extends Context.Service<ExternalLauncher, ExternalLauncherShape>()(
-  "viper/process/externalLauncher",
+  "vipercode/process/externalLauncher",
 ) {}
 
 // ==============================

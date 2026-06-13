@@ -56,7 +56,9 @@ describe("desktop Clerk external account adapter", () => {
   it("cleans up the pending callback when Clerk rejects account creation", async () => {
     const callbackCleanup = vi.fn();
     const bridge = {
-      createCloudAuthRequest: vi.fn().mockResolvedValue("vipercode://auth/callback?t3_state=failed"),
+      createCloudAuthRequest: vi
+        .fn()
+        .mockResolvedValue("vipercode://auth/callback?t3_state=failed"),
       onCloudAuthCallback: vi.fn(() => callbackCleanup),
     };
     const createError = new Error("oauth provider unavailable");

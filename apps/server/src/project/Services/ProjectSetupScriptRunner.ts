@@ -41,4 +41,4 @@ export interface ProjectSetupScriptRunnerShape {
 export class ProjectSetupScriptRunner extends Context.Service<
   ProjectSetupScriptRunner,
   ProjectSetupScriptRunnerShape
->()("viper/project/Services/ProjectSetupScriptRunner") {}
+>()("vipercode/project/Services/ProjectSetupScriptRunner") {}

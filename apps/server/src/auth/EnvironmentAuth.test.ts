@@ -22,7 +22,9 @@ const makeServerConfigLayer = (overrides?: Partial<ServerConfigShape>) =>
         ...overrides,
       } satisfies ServerConfigShape;
     }),
-  ).pipe(Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "viper-auth-server-test-" })));
+  ).pipe(
+    Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "viper-auth-server-test-" })),
+  );
 
 const makeEnvironmentAuthLayer = (overrides?: Partial<ServerConfigShape>) =>
   EnvironmentAuth.layer.pipe(

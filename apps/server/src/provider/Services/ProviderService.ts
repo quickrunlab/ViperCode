@@ -117,5 +117,5 @@ export interface ProviderServiceShape {
  * ProviderService - Service tag for provider orchestration.
  */
 export class ProviderService extends Context.Service<ProviderService, ProviderServiceShape>()(
-  "viper/provider/Services/ProviderService",
+  "vipercode/provider/Services/ProviderService",
 ) {}

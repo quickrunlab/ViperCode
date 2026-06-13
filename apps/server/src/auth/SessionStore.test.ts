@@ -25,7 +25,9 @@ const makeServerConfigLayer = (
         ...overrides,
       } satisfies ServerConfigShape;
     }),
-  ).pipe(Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "viper-auth-session-test-" })));
+  ).pipe(
+    Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "viper-auth-session-test-" })),
+  );
 
 const makeSessionStoreLayer = (
   overrides?: Partial<Pick<ServerConfigShape, "desktopBootstrapToken">>,

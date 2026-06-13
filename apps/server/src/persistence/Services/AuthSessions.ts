@@ -97,4 +97,4 @@ export interface AuthSessionRepositoryShape {
 export class AuthSessionRepository extends Context.Service<
   AuthSessionRepository,
   AuthSessionRepositoryShape
->()("viper/persistence/Services/AuthSessions/AuthSessionRepository") {}
+>()("vipercode/persistence/Services/AuthSessions/AuthSessionRepository") {}

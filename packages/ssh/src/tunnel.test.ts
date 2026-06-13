@@ -126,7 +126,10 @@ describe("ssh tunnel scripts", () => {
     });
 
     assert.include(script, "exec npx --yes 'vipercode@nightly; touch /tmp/viper-owned' \"$@\"");
-    assert.include(script, "exec npm exec --yes 'vipercode@nightly; touch /tmp/viper-owned' -- \"$@\"");
+    assert.include(
+      script,
+      "exec npm exec --yes 'vipercode@nightly; touch /tmp/viper-owned' -- \"$@\"",
+    );
     assert.notInclude(script, "exec npx --yes vipercode@nightly; touch /tmp/viper-owned");
   });
 
@@ -171,14 +174,20 @@ describe("ssh tunnel scripts", () => {
     assert.include(buildRemoteLaunchScript(), '--base-dir "$DEFAULT_SERVER_HOME"');
     assert.notInclude(buildRemoteLaunchScript(), "server-home");
     assert.include(buildRemoteLaunchScript(), "Remote Viper server did not become ready");
-    assert.include(buildRemoteLaunchScript({ packageSpec: "vipercode@nightly" }), "vipercode@nightly");
+    assert.include(
+      buildRemoteLaunchScript({ packageSpec: "vipercode@nightly" }),
+      "vipercode@nightly",
+    );
     assert.include(
       buildRemotePairingScript(target),
       '"$RUNNER_FILE" auth pairing create --base-dir "$PAIRING_BASE_DIR" --json',
     );
     assert.include(buildRemotePairingScript(target), 'PAIRING_BASE_DIR="$DEFAULT_SERVER_HOME"');
     assert.notInclude(buildRemotePairingScript(target), "server-home");
-    assert.include(buildRemotePairingScript(target, { packageSpec: "vipercode@nightly" }), "vipercode@nightly");
+    assert.include(
+      buildRemotePairingScript(target, { packageSpec: "vipercode@nightly" }),
+      "vipercode@nightly",
+    );
     assert.include(
       buildRemoteStopScript(target),
       'if [ "$REMOTE_MANAGED" != "external" ] && [ -n "$REMOTE_PID" ]',

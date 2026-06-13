@@ -47,7 +47,10 @@ describe("ssh auth", () => {
       assert.equal(env.VIPER_SSH_AUTH_SECRET, "super-secret");
       assert.equal(env.DISPLAY, "vipercode");
       assert.equal(yield* fs.exists(askpassPath), true);
-      assert.include(yield* fs.readFileString(askpassPath), 'printf "%s\\n" "$VIPER_SSH_AUTH_SECRET"');
+      assert.include(
+        yield* fs.readFileString(askpassPath),
+        'printf "%s\\n" "$VIPER_SSH_AUTH_SECRET"',
+      );
     }).pipe(Effect.provide(NodeServices.layer), Effect.scoped),
   );
 

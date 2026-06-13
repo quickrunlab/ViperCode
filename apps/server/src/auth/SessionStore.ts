@@ -122,7 +122,7 @@ export interface SessionStoreShape {
 }
 
 export class SessionStore extends Context.Service<SessionStore, SessionStoreShape>()(
-  "viper/auth/SessionStore",
+  "vipercode/auth/SessionStore",
 ) {}
 
 const SIGNING_SECRET_NAME = "server-signing-key";

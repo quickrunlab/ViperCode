@@ -22,10 +22,7 @@ import {
 } from "./projectPaths.ts";
 import type { EnvironmentScopedProjectShell } from "./shellTypes.ts";
 
-export type AddProjectRemoteProviderKind = Extract<
-  SourceControlProviderKind,
-  "github" | "gitlab"
->;
+export type AddProjectRemoteProviderKind = Extract<SourceControlProviderKind, "github" | "gitlab">;
 export type AddProjectRemoteSource = AddProjectRemoteProviderKind | "url";
 
 export type AddProjectRemoteSourceReadiness = Record<

@@ -88,9 +88,9 @@ function makeRegistry(input: {
         Layer.mock(BitbucketApi.BitbucketApi)({}),
         Layer.mock(GitHubCli.GitHubCli)({}),
         Layer.mock(GitLabCli.GitLabCli)({}),
-        ServerConfig.layerTest(process.cwd(), { prefix: "viper-source-control-registry-test-" }).pipe(
-          Layer.provide(NodeServices.layer),
-        ),
+        ServerConfig.layerTest(process.cwd(), {
+          prefix: "viper-source-control-registry-test-",
+        }).pipe(Layer.provide(NodeServices.layer)),
       ),
     ),
   );

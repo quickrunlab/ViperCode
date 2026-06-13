@@ -99,4 +99,4 @@ export interface SourceControlProviderShape {
 export class SourceControlProvider extends Context.Service<
   SourceControlProvider,
   SourceControlProviderShape
->()("viper/sourceControl/SourceControlProvider") {}
+>()("vipercode/sourceControl/SourceControlProvider") {}

@@ -92,4 +92,4 @@ export interface ProjectionCheckpointRepositoryShape {
 export class ProjectionCheckpointRepository extends Context.Service<
   ProjectionCheckpointRepository,
   ProjectionCheckpointRepositoryShape
->()("viper/persistence/Services/ProjectionCheckpoints/ProjectionCheckpointRepository") {}
+>()("vipercode/persistence/Services/ProjectionCheckpoints/ProjectionCheckpointRepository") {}

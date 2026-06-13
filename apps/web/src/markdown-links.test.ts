@@ -29,7 +29,9 @@ describe("rewriteMarkdownFileUriHref", () => {
 
   it("unwraps angle-bracketed file uri hrefs", () => {
     expect(
-      rewriteMarkdownFileUriHref(" <file:///D:/Programme/vipercode/apps/web/src/markdown-links.ts> "),
+      rewriteMarkdownFileUriHref(
+        " <file:///D:/Programme/vipercode/apps/web/src/markdown-links.ts> ",
+      ),
     ).toBe("D:/Programme/vipercode/apps/web/src/markdown-links.ts");
   });
 });

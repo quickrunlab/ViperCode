@@ -32,7 +32,9 @@ export type TypeId = "~local/sqlite-node/SqliteClient";
 /**
  * SqliteClient - Effect service tag for the sqlite SQL client.
  */
-export const SqliteClient = Context.Service<Client.SqlClient>("viper/persistence/NodeSqliteClient");
+export const SqliteClient = Context.Service<Client.SqlClient>(
+  "vipercode/persistence/NodeSqliteClient",
+);
 
 export interface SqliteClientConfig {
   readonly filename: string;

@@ -84,7 +84,9 @@ export const tailscaleServePortFlag = Flag.integer("tailscale-serve-port").pipe(
 const EnvServerConfig = Config.all({
   logLevel: Config.logLevel("VIPERCODE_LOG_LEVEL").pipe(Config.withDefault("Info")),
   traceMinLevel: Config.logLevel("VIPERCODE_TRACE_MIN_LEVEL").pipe(Config.withDefault("Info")),
-  traceTimingEnabled: Config.boolean("VIPERCODE_TRACE_TIMING_ENABLED").pipe(Config.withDefault(true)),
+  traceTimingEnabled: Config.boolean("VIPERCODE_TRACE_TIMING_ENABLED").pipe(
+    Config.withDefault(true),
+  ),
   traceFile: Config.string("VIPERCODE_TRACE_FILE").pipe(
     Config.option,
     Config.map(Option.getOrUndefined),
@@ -103,7 +105,9 @@ const EnvServerConfig = Config.all({
   otlpExportIntervalMs: Config.int("VIPERCODE_OTLP_EXPORT_INTERVAL_MS").pipe(
     Config.withDefault(10_000),
   ),
-  otlpServiceName: Config.string("VIPERCODE_OTLP_SERVICE_NAME").pipe(Config.withDefault("viper-server")),
+  otlpServiceName: Config.string("VIPERCODE_OTLP_SERVICE_NAME").pipe(
+    Config.withDefault("viper-server"),
+  ),
   mode: Config.schema(RuntimeMode, "VIPERCODE_MODE").pipe(
     Config.option,
     Config.map(Option.getOrUndefined),

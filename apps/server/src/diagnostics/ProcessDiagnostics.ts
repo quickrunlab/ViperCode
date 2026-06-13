@@ -41,7 +41,7 @@ export interface ProcessDiagnosticsShape {
 export class ProcessDiagnostics extends Context.Service<
   ProcessDiagnostics,
   ProcessDiagnosticsShape
->()("viper/diagnostics/ProcessDiagnostics") {}
+>()("vipercode/diagnostics/ProcessDiagnostics") {}
 
 class ProcessDiagnosticsError extends Schema.TaggedErrorClass<ProcessDiagnosticsError>()(
   "ProcessDiagnosticsError",
@@ -396,7 +396,9 @@ function assertDescendantPid(
       return descendant
         ? Effect.void
         : Effect.fail(
-            toProcessDiagnosticsError(`Process ${pid} is not a live descendant of the Viper server.`),
+            toProcessDiagnosticsError(
+              `Process ${pid} is not a live descendant of the Viper server.`,
+            ),
           );
     }),
   );

@@ -74,4 +74,6 @@ export interface VcsDriverShape {
   ) => Effect.Effect<ReviewDiffPreviewResult, VcsError>;
 }
 
-export class VcsDriver extends Context.Service<VcsDriver, VcsDriverShape>()("viper/vcs/VcsDriver") {}
+export class VcsDriver extends Context.Service<VcsDriver, VcsDriverShape>()(
+  "vipercode/vcs/VcsDriver",
+) {}

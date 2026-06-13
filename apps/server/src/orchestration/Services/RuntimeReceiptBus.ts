@@ -62,5 +62,5 @@ export interface RuntimeReceiptBusShape {
 }
 
 export class RuntimeReceiptBus extends Context.Service<RuntimeReceiptBus, RuntimeReceiptBusShape>()(
-  "viper/orchestration/Services/RuntimeReceiptBus",
+  "vipercode/orchestration/Services/RuntimeReceiptBus",
 ) {}

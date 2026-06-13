@@ -165,4 +165,4 @@ export interface ProjectionSnapshotQueryShape {
 export class ProjectionSnapshotQuery extends Context.Service<
   ProjectionSnapshotQuery,
   ProjectionSnapshotQueryShape
->()("viper/orchestration/Services/ProjectionSnapshotQuery") {}
+>()("vipercode/orchestration/Services/ProjectionSnapshotQuery") {}

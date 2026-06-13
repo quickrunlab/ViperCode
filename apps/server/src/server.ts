@@ -74,6 +74,7 @@ import * as ProcessDiagnostics from "./diagnostics/ProcessDiagnostics.ts";
 import * as ProcessResourceMonitor from "./diagnostics/ProcessResourceMonitor.ts";
 import * as TraceDiagnostics from "./diagnostics/TraceDiagnostics.ts";
 import { OrchestrationLayerLive } from "./orchestration/runtimeLayer.ts";
+import { OpenCodeRuntimeLive } from "./provider/opencodeRuntime.ts";
 import {
   clearPersistedServerRuntimeState,
   makePersistedServerRuntimeState,
@@ -171,9 +172,7 @@ const VcsDriverRegistryLayerLive = VcsDriverRegistry.layer.pipe(
 );
 
 const SourceControlProviderRegistryLayerLive = SourceControlProviderRegistry.layer.pipe(
-  Layer.provide(
-    Layer.mergeAll(GitHubCli.layer, GitLabCli.layer),
-  ),
+  Layer.provide(Layer.mergeAll(GitHubCli.layer, GitLabCli.layer)),
   Layer.provideMerge(GitVcsDriver.layer),
   Layer.provideMerge(VcsDriverRegistryLayerLive),
 );
@@ -279,6 +278,9 @@ const RuntimeCoreDependenciesLive = ReactorLayerLive.pipe(
   // Provided once at the runtime level so every consumer sees the same
   // logger instances.
   Layer.provideMerge(ProviderEventLoggersLive),
+  // `OpenCodeDriver.create()` yields `OpenCodeRuntime`; exposing it at the
+  // runtime level keeps a single Live for all opencode consumers.
+  Layer.provideMerge(OpenCodeRuntimeLive),
   Layer.provideMerge(ServerSettingsLive),
   Layer.provideMerge(WorkspaceLayerLive),
   Layer.provideMerge(ProjectFaviconResolverLive),

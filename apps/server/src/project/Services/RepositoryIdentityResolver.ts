@@ -9,4 +9,4 @@ export interface RepositoryIdentityResolverShape {
 export class RepositoryIdentityResolver extends Context.Service<
   RepositoryIdentityResolver,
   RepositoryIdentityResolverShape
->()("viper/project/Services/RepositoryIdentityResolver") {}
+>()("vipercode/project/Services/RepositoryIdentityResolver") {}

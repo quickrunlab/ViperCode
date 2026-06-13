@@ -1,6 +1,9 @@
 import * as NodeCrypto from "node:crypto";
 
-import { RelayAgentActivityAggregateState, type RelayDeliveryKind } from "@vipercode/contracts/relay";
+import {
+  RelayAgentActivityAggregateState,
+  type RelayDeliveryKind,
+} from "@vipercode/contracts/relay";
 import { stableStringify } from "@vipercode/shared/relaySigning";
 import * as DateTime from "effect/DateTime";
 import * as Option from "effect/Option";

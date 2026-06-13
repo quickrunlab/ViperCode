@@ -1,4 +1,8 @@
-import { AuthEnvironmentScopes, AuthSessionId, ServerAuthSessionMethod } from "@vipercode/contracts";
+import {
+  AuthEnvironmentScopes,
+  AuthSessionId,
+  ServerAuthSessionMethod,
+} from "@vipercode/contracts";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 import * as SqlSchema from "effect/unstable/sql/SqlSchema";
 import * as Effect from "effect/Effect";

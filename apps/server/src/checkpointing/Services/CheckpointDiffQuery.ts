@@ -46,4 +46,4 @@ export interface CheckpointDiffQueryShape {
 export class CheckpointDiffQuery extends Context.Service<
   CheckpointDiffQuery,
   CheckpointDiffQueryShape
->()("viper/checkpointing/Services/CheckpointDiffQuery") {}
+>()("vipercode/checkpointing/Services/CheckpointDiffQuery") {}

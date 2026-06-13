@@ -151,10 +151,7 @@ interface AddProjectEnvironmentOption {
   readonly isPrimary: boolean;
 }
 
-type AddProjectRemoteProviderKind = Extract<
-  SourceControlProviderKind,
-  "github" | "gitlab"
->;
+type AddProjectRemoteProviderKind = Extract<SourceControlProviderKind, "github" | "gitlab">;
 type AddProjectRemoteSource = AddProjectRemoteProviderKind | "url";
 
 type AddProjectCloneFlow =
@@ -172,11 +169,7 @@ type AddProjectCloneFlow =
       readonly remoteUrl: string;
     };
 
-const REMOTE_PROJECT_SOURCES: ReadonlyArray<AddProjectRemoteSource> = [
-  "url",
-  "github",
-  "gitlab",
-];
+const REMOTE_PROJECT_SOURCES: ReadonlyArray<AddProjectRemoteSource> = ["url", "github", "gitlab"];
 const REMOTE_PROJECT_PROVIDER_SOURCES: ReadonlyArray<AddProjectRemoteProviderKind> = [
   "github",
   "gitlab",

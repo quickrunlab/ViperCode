@@ -23,7 +23,9 @@ describe("parsePullRequestReference", () => {
 
   it("accepts legacy Azure DevOps pull request URLs", () => {
     expect(
-      parsePullRequestReference("https://acme.visualstudio.com/project/_git/vipercode/pullrequest/42"),
+      parsePullRequestReference(
+        "https://acme.visualstudio.com/project/_git/vipercode/pullrequest/42",
+      ),
     ).toBe("https://acme.visualstudio.com/project/_git/vipercode/pullrequest/42");
   });
 
@@ -45,7 +47,9 @@ describe("parsePullRequestReference", () => {
 
   it("accepts gh pr checkout commands with GitHub pull request URLs", () => {
     expect(
-      parsePullRequestReference("gh pr checkout https://github.com/Viperisuseful/ViperCode/pull/42"),
+      parsePullRequestReference(
+        "gh pr checkout https://github.com/Viperisuseful/ViperCode/pull/42",
+      ),
     ).toBe("https://github.com/Viperisuseful/ViperCode/pull/42");
   });
 

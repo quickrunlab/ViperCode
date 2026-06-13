@@ -1,5 +1,8 @@
 import type { ProjectId } from "@vipercode/contracts";
-import type { SidebarProjectSortOrder, SidebarThreadSortOrder } from "@vipercode/contracts/settings";
+import type {
+  SidebarProjectSortOrder,
+  SidebarThreadSortOrder,
+} from "@vipercode/contracts/settings";
 import type { Thread } from "../types";
 
 export type ThreadSortInput = Pick<Thread, "createdAt" | "updatedAt"> & {

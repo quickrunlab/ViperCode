@@ -44,7 +44,7 @@ export interface TraceDiagnosticsShape {
 }
 
 export class TraceDiagnostics extends Context.Service<TraceDiagnostics, TraceDiagnosticsShape>()(
-  "viper/diagnostics/TraceDiagnostics",
+  "vipercode/diagnostics/TraceDiagnostics",
 ) {}
 
 interface TraceDiagnosticsInput {

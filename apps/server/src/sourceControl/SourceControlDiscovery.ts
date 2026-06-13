@@ -56,7 +56,7 @@ export interface SourceControlDiscoveryShape {
 export class SourceControlDiscovery extends Context.Service<
   SourceControlDiscovery,
   SourceControlDiscoveryShape
->()("viper/sourceControl/SourceControlDiscovery") {}
+>()("vipercode/sourceControl/SourceControlDiscovery") {}
 
 export const layer = Layer.effect(
   SourceControlDiscovery,

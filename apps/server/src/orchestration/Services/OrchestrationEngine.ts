@@ -67,4 +67,4 @@ export interface OrchestrationEngineShape {
 export class OrchestrationEngineService extends Context.Service<
   OrchestrationEngineService,
   OrchestrationEngineShape
->()("viper/orchestration/Services/OrchestrationEngine/OrchestrationEngineService") {}
+>()("vipercode/orchestration/Services/OrchestrationEngine/OrchestrationEngineService") {}

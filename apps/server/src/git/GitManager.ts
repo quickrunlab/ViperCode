@@ -86,7 +86,7 @@ export interface GitManagerShape {
 }
 
 export class GitManager extends Context.Service<GitManager, GitManagerShape>()(
-  "viper/git/GitManager",
+  "vipercode/git/GitManager",
 ) {}
 
 const COMMIT_TIMEOUT_MS = 10 * 60_000;
@@ -1307,7 +1307,10 @@ export const makeGitManager = Effect.fn("makeGitManager")(function* () {
       modelSelection,
     });
 
-    const bodyFile = path.join(tempDir, `vipercode-pr-body-${process.pid}-${yield* randomUUIDv4}.md`);
+    const bodyFile = path.join(
+      tempDir,
+      `vipercode-pr-body-${process.pid}-${yield* randomUUIDv4}.md`,
+    );
     yield* fileSystem
       .writeFileString(bodyFile, generated.body)
       .pipe(

@@ -88,7 +88,7 @@ export interface PairingGrantStoreShape {
 }
 
 export class PairingGrantStore extends Context.Service<PairingGrantStore, PairingGrantStoreShape>()(
-  "viper/auth/PairingGrantStore",
+  "vipercode/auth/PairingGrantStore",
 ) {}
 
 interface StoredBootstrapGrant extends BootstrapGrant {

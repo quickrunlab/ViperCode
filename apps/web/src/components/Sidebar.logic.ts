@@ -1,5 +1,8 @@
 import * as React from "react";
-import type { SidebarProjectSortOrder, SidebarThreadSortOrder } from "@vipercode/contracts/settings";
+import type {
+  SidebarProjectSortOrder,
+  SidebarThreadSortOrder,
+} from "@vipercode/contracts/settings";
 import {
   getThreadSortTimestamp,
   sortThreads,

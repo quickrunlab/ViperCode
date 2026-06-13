@@ -9,4 +9,4 @@ export interface BrowserTraceCollectorShape {
 export class BrowserTraceCollector extends Context.Service<
   BrowserTraceCollector,
   BrowserTraceCollectorShape
->()("viper/observability/Services/BrowserTraceCollector") {}
+>()("vipercode/observability/Services/BrowserTraceCollector") {}

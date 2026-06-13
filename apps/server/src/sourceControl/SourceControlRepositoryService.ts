@@ -39,7 +39,7 @@ export interface SourceControlRepositoryServiceShape {
 export class SourceControlRepositoryService extends Context.Service<
   SourceControlRepositoryService,
   SourceControlRepositoryServiceShape
->()("viper/sourceControl/SourceControlRepositoryService") {}
+>()("vipercode/sourceControl/SourceControlRepositoryService") {}
 
 function detailFromUnknown(cause: unknown): string {
   if (typeof cause === "object" && cause !== null) {

@@ -142,7 +142,12 @@ it.layer(NodeServices.layer)("RepositoryIdentityResolverLive", (it) => {
       });
 
       yield* git(cwd, ["init"]);
-      yield* git(cwd, ["remote", "add", "origin", "git@gitlab.com:ViperCode/platform/vipercode.git"]);
+      yield* git(cwd, [
+        "remote",
+        "add",
+        "origin",
+        "git@gitlab.com:ViperCode/platform/vipercode.git",
+      ]);
 
       const resolver = yield* RepositoryIdentityResolver;
       const identity = yield* resolver.resolve(cwd);
@@ -211,7 +216,12 @@ it.layer(NodeServices.layer)("RepositoryIdentityResolverLive", (it) => {
       expect(initialIdentity).not.toBeNull();
       expect(initialIdentity?.canonicalKey).toBe("github.com/vipercode/vipercode");
 
-      yield* git(cwd, ["remote", "set-url", "origin", "git@github.com:ViperCode/vipercode-next.git"]);
+      yield* git(cwd, [
+        "remote",
+        "set-url",
+        "origin",
+        "git@github.com:ViperCode/vipercode-next.git",
+      ]);
 
       const cachedIdentity = yield* resolver.resolve(cwd);
       expect(cachedIdentity).not.toBeNull();

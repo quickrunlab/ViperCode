@@ -68,5 +68,5 @@ export interface WorkspaceEntriesShape {
  * WorkspaceEntries - Service tag for cached workspace entry search.
  */
 export class WorkspaceEntries extends Context.Service<WorkspaceEntries, WorkspaceEntriesShape>()(
-  "viper/workspace/Services/WorkspaceEntries",
+  "vipercode/workspace/Services/WorkspaceEntries",
 ) {}

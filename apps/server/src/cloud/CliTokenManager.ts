@@ -60,7 +60,7 @@ export interface CloudCliTokenManagerShape {
 export class CloudCliTokenManager extends Context.Service<
   CloudCliTokenManager,
   CloudCliTokenManagerShape
->()("viper/cloud/CliTokenManager/CloudCliTokenManager") {}
+>()("vipercode/cloud/CliTokenManager/CloudCliTokenManager") {}
 
 const wrapError =
   (message: string) =>
@@ -182,7 +182,9 @@ const make = Effect.gen(function* () {
     authorizationUrl.searchParams.set("state", state);
     authorizationUrl.searchParams.set("code_challenge", challenge);
     authorizationUrl.searchParams.set("code_challenge_method", "S256");
-    yield* Console.log(`Open this URL to authorize Viper Connect:\n${authorizationUrl.toString()}\n`);
+    yield* Console.log(
+      `Open this URL to authorize Viper Connect:\n${authorizationUrl.toString()}\n`,
+    );
     const code = yield* Deferred.await(callback).pipe(
       Effect.timeout(CLOUD_CLI_OAUTH_CALLBACK_TIMEOUT),
       Effect.catchTag("TimeoutError", () =>

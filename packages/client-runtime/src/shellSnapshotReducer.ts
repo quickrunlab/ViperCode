@@ -1,5 +1,8 @@
 import * as Arr from "effect/Array";
-import type { OrchestrationShellSnapshot, OrchestrationShellStreamEvent } from "@vipercode/contracts";
+import type {
+  OrchestrationShellSnapshot,
+  OrchestrationShellStreamEvent,
+} from "@vipercode/contracts";
 
 /**
  * Apply a single shell stream event to an existing snapshot, returning a new

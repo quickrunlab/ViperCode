@@ -38,4 +38,4 @@ export interface ProviderCommandReactorShape {
 export class ProviderCommandReactor extends Context.Service<
   ProviderCommandReactor,
   ProviderCommandReactorShape
->()("viper/orchestration/Services/ProviderCommandReactor") {}
+>()("vipercode/orchestration/Services/ProviderCommandReactor") {}

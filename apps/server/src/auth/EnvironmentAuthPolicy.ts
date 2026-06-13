@@ -14,7 +14,7 @@ export interface EnvironmentAuthPolicyShape {
 export class EnvironmentAuthPolicy extends Context.Service<
   EnvironmentAuthPolicy,
   EnvironmentAuthPolicyShape
->()("viper/auth/EnvironmentAuthPolicy") {}
+>()("vipercode/auth/EnvironmentAuthPolicy") {}
 
 export const make = Effect.fn("makeEnvironmentAuthPolicy")(function* () {
   const config = yield* ServerConfig;

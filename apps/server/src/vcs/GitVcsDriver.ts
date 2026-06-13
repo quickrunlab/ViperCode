@@ -222,7 +222,7 @@ export interface GitVcsDriverShape {
 }
 
 export class GitVcsDriver extends Context.Service<GitVcsDriver, GitVcsDriverShape>()(
-  "viper/vcs/GitVcsDriver",
+  "vipercode/vcs/GitVcsDriver",
 ) {}
 
 const WORKSPACE_FILES_MAX_OUTPUT_BYTES = 16 * 1024 * 1024;

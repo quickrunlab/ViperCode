@@ -4807,7 +4807,9 @@ describe("ChatView timeline estimator parity (full app)", () => {
       const repositoryInput = await waitForCommandPaletteInput(
         "Enter GitHub repository (owner/repo)",
       );
-      await page.getByPlaceholder("Enter GitHub repository (owner/repo)").fill("viper-oss/viper-env");
+      await page
+        .getByPlaceholder("Enter GitHub repository (owner/repo)")
+        .fill("viper-oss/viper-env");
       await dispatchInputKey(repositoryInput, { key: "Enter" });
 
       await vi.waitFor(
