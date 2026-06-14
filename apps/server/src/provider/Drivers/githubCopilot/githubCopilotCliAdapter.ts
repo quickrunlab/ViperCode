@@ -20,6 +20,7 @@ import type { ProviderAdapterShape } from "../../Services/ProviderAdapter.ts";
 import { makeAcpProviderAdapter } from "../../acp/AcpProviderAdapter.ts";
 import type { AcpSpawnInput } from "../../acp/AcpSessionRuntime.ts";
 import type { GitHubCopilotAuthShape } from "./githubCopilotAuth.ts";
+import { DEFAULT_COPILOT_CLI_MODELS } from "./githubCopilotCliModels.ts";
 import { GITHUB_COPILOT_DRIVER_KIND } from "./githubCopilotProvider.ts";
 
 // Reported to the agent during ACP `initialize`; purely informational.
@@ -54,6 +55,13 @@ export const makeGitHubCopilotCliAdapter = (input: {
   readonly cliPath: string;
   /** Model used when a turn carries no explicit selection. */
   readonly defaultModel: string;
+  /**
+   * The CLI's accepted `--model` ids (memoized probe). Used to validate the
+   * requested model before spawning: an id the CLI does not recognize makes
+   * `copilot --acp --model <id>` exit immediately, so unknown ids are dropped
+   * (the CLI then uses its own default) rather than crashing the turn.
+   */
+  readonly getCliModels: Effect.Effect<ReadonlyArray<string>>;
 }): Effect.Effect<
   ProviderAdapterShape<ProviderAdapterError>,
   never,
@@ -67,7 +75,9 @@ export const makeGitHubCopilotCliAdapter = (input: {
     buildSpawn: ({ cwd, model }) =>
       Effect.gen(function* () {
         const args = ["--acp", "--add-dir", cwd];
-        if (model) {
+        const cliModels = yield* input.getCliModels;
+        const acceptedModels = cliModels.length > 0 ? cliModels : DEFAULT_COPILOT_CLI_MODELS;
+        if (model && acceptedModels.includes(model)) {
           args.push("--model", model);
         }
         const env = yield* resolveAuthEnv(input.auth);

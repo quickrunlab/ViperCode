@@ -35,6 +35,9 @@ export class CheckpointInvariantError extends Schema.TaggedErrorClass<Checkpoint
   }
 }
 
-export type CheckpointStoreError = VcsError | CheckpointInvariantError | CheckpointUnavailableError;
+export type CheckpointStoreError = VcsError | CheckpointUnavailableError;
 
-export type CheckpointServiceError = CheckpointStoreError | ProjectionRepositoryError;
+export type CheckpointServiceError =
+  | CheckpointStoreError
+  | CheckpointInvariantError
+  | ProjectionRepositoryError;

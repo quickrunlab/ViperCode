@@ -27,8 +27,8 @@ import {
   type ProviderDriver,
   type ProviderInstance,
 } from "../../ProviderDriver.ts";
-import { fetchCopilotModels } from "./githubCopilotApi.ts";
 import { makeGitHubCopilotCliAdapter } from "./githubCopilotCliAdapter.ts";
+import { probeCopilotCliModelEnum } from "./githubCopilotCliModels.ts";
 import { makeGitHubCopilotAuth } from "./githubCopilotAuth.ts";
 import {
   checkCopilotProviderStatus,
@@ -62,9 +62,9 @@ export const GitHubCopilotDriver: ProviderDriver<GithubCopilotSettings, GitHubCo
   defaultConfig: (): GithubCopilotSettings => decodeSettings({}),
   create: ({ instanceId, displayName, accentColor, enabled, config }) =>
     Effect.gen(function* () {
-      const httpClient = yield* HttpClient.HttpClient;
       const path = yield* Path.Path;
       const serverConfig = yield* ServerConfig;
+      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
 
       const envClientId = process.env.VIPERCODE_GITHUB_COPILOT_CLIENT_ID?.trim() ?? "";
       const envEnterpriseUrl = process.env.VIPERCODE_GITHUB_ENTERPRISE_URL?.trim() ?? "";
@@ -78,11 +78,20 @@ export const GitHubCopilotDriver: ProviderDriver<GithubCopilotSettings, GitHubCo
         clientId: oauthClientId,
         githubBaseUrl,
       });
+      // Memoized probe of the CLI's accepted `--model` ids. Shared by the model
+      // picker (snapshot) and the spawn guard so both speak the CLI's vocabulary
+      // and a model selection can never crash `copilot --acp`.
+      const getCliModels = yield* Effect.cached(
+        probeCopilotCliModelEnum(cliPath).pipe(
+          Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
+        ),
+      );
       const adapter = yield* makeGitHubCopilotCliAdapter({
         instanceId,
         auth,
         cliPath,
         defaultModel: DEFAULT_MODEL,
+        getCliModels,
       });
       const textGeneration = yield* makeGitHubCopilotTextGeneration({
         auth,
@@ -106,10 +115,7 @@ export const GitHubCopilotDriver: ProviderDriver<GithubCopilotSettings, GitHubCo
           enabled,
           customModels: config.customModels,
           auth,
-          fetchModels: (session) =>
-            fetchCopilotModels(session.token, { apiBaseUrl: session.apiBaseUrl }).pipe(
-              Effect.provideService(HttpClient.HttpClient, httpClient),
-            ),
+          getCliModels,
         }),
         refreshInterval: SNAPSHOT_REFRESH_INTERVAL,
       }).pipe(
