@@ -1,6 +1,6 @@
 {
   "name": "@vipercode/mobile",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "private": true,
   "main": "App.tsx",
   "scripts": {
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@types/react": "~19.2.14",
+    "babel-preset-expo": "~13.2.0",
     "vite-plus": "catalog:"
   }
 }
