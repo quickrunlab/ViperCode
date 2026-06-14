@@ -1,10 +1,9 @@
 import type { MobileKnownEnvironmentRecord } from "../runtime/clientRuntimeImports.ts";
+import { readPublicJson, writePublicJson } from "./publicStorage.ts";
+import { readSecure, writeSecure, removeSecure } from "./secureStorage.ts";
 
 const KNOWN_ENVIRONMENTS_KEY = "vipercode:known-environments";
 const ENVIRONMENT_CREDENTIAL_PREFIX = "vipercode:env-credential:";
-
-import { readPublicJson, writePublicJson } from "./publicStorage.ts";
-import { readSecure, writeSecure, removeSecure } from "./secureStorage.ts";
 
 export async function loadKnownEnvironments(): Promise<
   ReadonlyArray<MobileKnownEnvironmentRecord>

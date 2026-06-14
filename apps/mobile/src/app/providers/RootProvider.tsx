@@ -1,8 +1,12 @@
+import { ClerkProvider } from "@clerk/clerk-expo";
 import React, { type ErrorInfo, type ReactNode } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet, Text, View } from "react-native";
 import { theme } from "../../theme/index.ts";
+import { resolveMobilePublicConfig } from "../../runtime/resolveConfig.ts";
+import { AuthGate } from "../../auth/AuthGate.tsx";
+import { ManagedRelayAuthProvider } from "../../auth/ManagedRelayAuthProvider.tsx";
 
 interface Props {
   readonly children: ReactNode;
@@ -39,12 +43,20 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
+const config = resolveMobilePublicConfig();
+
 export function RootProvider({ children }: Props) {
   return (
     <ErrorBoundary>
-      <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>{children}</SafeAreaProvider>
-      </GestureHandlerRootView>
+      <ClerkProvider publishableKey={config.clerkPublishableKey ?? ""}>
+        <ManagedRelayAuthProvider>
+          <AuthGate>
+            <GestureHandlerRootView style={styles.root}>
+              <SafeAreaProvider>{children}</SafeAreaProvider>
+            </GestureHandlerRootView>
+          </AuthGate>
+        </ManagedRelayAuthProvider>
+      </ClerkProvider>
     </ErrorBoundary>
   );
 }

@@ -8,6 +8,8 @@ const config = resolveMobilePublicConfig();
 
 const mobileHttpClientLayer = remoteHttpClientLayer(globalThis.fetch);
 
+export const hasRelayConfig = Boolean(config.relayUrl);
+
 const mobileRelayClientLayer = managedRelayClientLayer({
   relayUrl: config.relayUrl ?? "https://relay.invalid",
   clientId: "viper-mobile",

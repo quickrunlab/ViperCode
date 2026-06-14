@@ -1,56 +1,126 @@
+import { useAuth } from "@clerk/clerk-expo";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import type { RootStackParamList } from "../navigation/AppNavigator.tsx";
 import { theme } from "../../theme/index.ts";
 import { loadKnownEnvironments } from "../../storage/environmentStore.ts";
-import type { MobileKnownEnvironmentRecord } from "../../runtime/clientRuntimeImports.ts";
+import type {
+  MobileKnownEnvironmentRecord,
+  MobileConnectionState,
+} from "../../runtime/clientRuntimeImports.ts";
+import { useRelayEnvironments } from "../../runtime/useRelayEnvironments.ts";
+import { useConnectionStore, useConnectionService } from "../../connections/ConnectionProvider.tsx";
+import { hasRelayConfig } from "../../runtime/mobileRuntime.ts";
+import { resolveMobilePublicConfig } from "../../runtime/resolveConfig.ts";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 
-export function HomeScreen({ navigation }: Props) {
-  const [environments, setEnvironments] = useState<ReadonlyArray<MobileKnownEnvironmentRecord>>([]);
+function statusColor(state: MobileConnectionState): string {
+  switch (state) {
+    case "connected":
+      return theme.colors.success;
+    case "connecting":
+    case "reconnecting":
+      return theme.colors.warning;
+    case "error":
+    case "requires-auth":
+      return theme.colors.error;
+    default:
+      return theme.colors.textMuted;
+  }
+}
 
-  const refresh = useCallback(async () => {
-    const list = await loadKnownEnvironments();
-    setEnvironments(list);
-  }, []);
+export function HomeScreen({ navigation }: Props) {
+  const { isSignedIn } = useAuth();
+  const store = useConnectionStore();
+  const service = useConnectionService();
+  const relay = useRelayEnvironments();
+  const [pairedEnvs, setPairedEnvs] = useState<ReadonlyArray<MobileKnownEnvironmentRecord>>([]);
+
+  const entries = useMemo(() => store.getAll(), [store]);
 
   useEffect(() => {
-    void refresh();
-    const interval = setInterval(() => {
-      void refresh();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [refresh]);
+    const unsubscribe = store.subscribe(() => {
+      setPairedEnvs((prev) => prev);
+    });
+    void loadKnownEnvironments().then(setPairedEnvs);
+    return () => unsubscribe();
+  }, [store]);
+
+  const hasRelay = hasRelayConfig && isSignedIn;
+  const hasPaired = pairedEnvs.length > 0;
+  const hasRelayEnvs = relay.data !== null && relay.data.length > 0;
+  const isEmpty = !hasPaired && (!hasRelay || !hasRelayEnvs);
 
   return (
     <View style={styles.container}>
-      {/* oxlint-disable-next-line react/style-prop-object -- expo-status-bar uses string style */}
       <StatusBar style="light" />
 
-      {environments.length === 0 ? (
+      {isEmpty ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.title}>Viper Code</Text>
-          <Text style={styles.subtitle}>No environments paired yet.</Text>
-          <Text style={styles.hint}>Pair with your PC using a QR code or paste a pairing URL.</Text>
+          {isSignedIn ? (
+            <>
+              <Text style={styles.subtitle}>No environments yet.</Text>
+              <Text style={styles.hint}>
+                {hasRelayConfig
+                  ? "Enable Viper Connect on your PC under Settings > Connections, or pair manually below."
+                  : "Relay is not configured. Pair manually using a QR code or pairing URL."}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.subtitle}>Sign in to see your environments.</Text>
+            </>
+          )}
         </View>
       ) : (
         <FlatList
-          data={environments}
+          data={[
+            ...pairedEnvs,
+            ...(relay.data ?? []).map((re) => ({
+              version: 1 as const,
+              environmentId: re.environmentId as MobileKnownEnvironmentRecord["environmentId"],
+              label: re.label,
+              httpBaseUrl: re.endpoint.httpBaseUrl,
+              wsBaseUrl: re.endpoint.wsBaseUrl,
+              createdAt: re.linkedAt,
+              lastConnectedAt: null,
+              relayManaged: { relayUrl: resolveMobilePublicConfig().relayUrl ?? "" },
+            })),
+          ]}
           keyExtractor={(item) => item.environmentId}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <View style={styles.envRow}>
-              <View style={styles.envInfo}>
-                <Text style={styles.envLabel}>{item.label}</Text>
-                <Text style={styles.envUrl}>{item.httpBaseUrl}</Text>
-              </View>
-              <View style={styles.envStatus} />
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const entry = entries.find((e) => e.environmentId === item.environmentId);
+            const state = entry?.state ?? "idle";
+            return (
+              <Pressable
+                style={styles.envRow}
+                onPress={() => {
+                  if (state === "connected") {
+                    void service.disconnectEnvironment(item.environmentId);
+                  } else if (state === "idle" || state === "error" || state === "requires-auth") {
+                    void service.connectEnvironment(item.environmentId);
+                  }
+                }}
+              >
+                <View style={styles.envInfo}>
+                  <Text style={styles.envLabel}>{item.label}</Text>
+                  <Text style={styles.envUrl}>{item.httpBaseUrl}</Text>
+                  {entry?.error ? <Text style={styles.envError}>{entry.error}</Text> : null}
+                </View>
+                <View style={[styles.envStatus, { backgroundColor: statusColor(state) }]} />
+              </Pressable>
+            );
+          }}
         />
+      )}
+
+      {isSignedIn ? null : (
+        <Text style={styles.signInHint}>Sign in to see relay-connected environments.</Text>
       )}
 
       <Pressable style={styles.pairButton} onPress={() => navigation.navigate("Pair")}>
@@ -88,6 +158,12 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     textAlign: "center",
   },
+  signInHint: {
+    fontSize: 12,
+    color: theme.colors.textMuted,
+    textAlign: "center",
+    paddingBottom: theme.spacing.sm,
+  },
   listContent: {
     padding: theme.spacing.md,
   },
@@ -114,11 +190,15 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
+  envError: {
+    fontSize: 11,
+    color: theme.colors.error,
+    marginTop: 2,
+  },
   envStatus: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: theme.colors.textMuted,
     marginLeft: theme.spacing.sm,
   },
   pairButton: {

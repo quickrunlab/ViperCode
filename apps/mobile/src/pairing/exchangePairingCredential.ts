@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import {
   bootstrapRemoteBearerSession,
   fetchRemoteEnvironmentDescriptor,
@@ -26,7 +27,7 @@ export const exchangePairingCredential = (
       clientMetadata: {
         label: "Viper Code Mobile",
         deviceType: "mobile",
-        os: "android",
+        os: Platform.OS,
       },
     });
     return {

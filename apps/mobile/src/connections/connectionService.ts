@@ -2,6 +2,10 @@ import { getReconnectDelayMs, DEFAULT_RECONNECT_BACKOFF } from "../runtime/clien
 import { loadEnvironmentCredential, loadKnownEnvironments } from "../storage/environmentStore.ts";
 import { MobileConnectionStore } from "./connectionStore.ts";
 import { subscribeAppLifecycle } from "./appLifecycle.ts";
+import { subscribeNetworkState } from "./networkMonitor.ts";
+
+const MAX_RECONNECT_CONCURRENCY = 3;
+const MAX_RENEWAL_ATTEMPTS = 2;
 
 export interface ConnectionServiceOptions {
   readonly store: MobileConnectionStore;
@@ -17,7 +21,9 @@ export class MobileConnectionService {
   private readonly options: ConnectionServiceOptions;
   private retryCounters = new Map<string, number>();
   private retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private renewalAttempts = new Map<string, number>();
   private lifecycleUnsubscribe: (() => void) | null = null;
+  private netInfoUnsubscribe: (() => void) | null = null;
   private disposed = false;
 
   constructor(options: ConnectionServiceOptions) {
@@ -41,6 +47,24 @@ export class MobileConnectionService {
         this.clearAllRetryTimers();
       },
     });
+
+    this.netInfoUnsubscribe = subscribeNetworkState({
+      onOnline: () => {
+        void this.reconnectAll();
+      },
+      onOffline: () => {
+        this.clearAllRetryTimers();
+      },
+    });
+  }
+
+  setNetworkSubscription(unsubscribe: () => void): void {
+    if (this.disposed) {
+      unsubscribe();
+      return;
+    }
+    this.netInfoUnsubscribe?.();
+    this.netInfoUnsubscribe = unsubscribe;
   }
 
   async connectEnvironment(environmentId: string): Promise<void> {
@@ -69,6 +93,7 @@ export class MobileConnectionService {
   async disconnectEnvironment(environmentId: string): Promise<void> {
     this.clearRetryTimer(environmentId);
     this.retryCounters.delete(environmentId);
+    this.renewalAttempts.delete(environmentId);
     try {
       await this.options.disconnect(environmentId);
     } catch {
@@ -81,13 +106,18 @@ export class MobileConnectionService {
     if (this.disposed) return;
 
     const entries = this.store.getAll();
-    for (const entry of entries) {
-      if (entry.state === "connected" || entry.state === "connecting") {
-        continue;
-      }
-      if (entry.state === "idle" || entry.state === "error" || entry.state === "reconnecting") {
-        void this.reconnectEnvironment(entry.environmentId);
-      }
+    const candidates = entries.filter(
+      (e) =>
+        e.state !== "connected" &&
+        e.state !== "connecting" &&
+        (e.state === "idle" || e.state === "error" || e.state === "reconnecting"),
+    );
+
+    for (let i = 0; i < candidates.length; i += MAX_RECONNECT_CONCURRENCY) {
+      const batch = candidates.slice(i, i + MAX_RECONNECT_CONCURRENCY);
+      await Promise.allSettled(
+        batch.map((entry) => this.reconnectEnvironment(entry.environmentId)),
+      );
     }
   }
 
@@ -106,12 +136,26 @@ export class MobileConnectionService {
       await this.options.reconnect(environmentId);
       this.store.setState(environmentId, "connected");
       this.retryCounters.set(environmentId, 0);
+      this.renewalAttempts.delete(environmentId);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Reconnect failed.";
 
       if (this.isAuthError(message)) {
+        const attempts = this.renewalAttempts.get(environmentId) ?? 0;
+        if (attempts >= MAX_RENEWAL_ATTEMPTS) {
+          this.renewalAttempts.delete(environmentId);
+          this.store.setState(
+            environmentId,
+            "requires-auth",
+            "Credential renewal failed after retries.",
+          );
+          return;
+        }
+
+        this.renewalAttempts.set(environmentId, attempts + 1);
         const renewed = await this.tryRenewCredential(environmentId);
         if (renewed) {
+          this.renewalAttempts.delete(environmentId);
           void this.reconnectEnvironment(environmentId);
           return;
         }
@@ -129,6 +173,8 @@ export class MobileConnectionService {
     this.clearAllRetryTimers();
     this.lifecycleUnsubscribe?.();
     this.lifecycleUnsubscribe = null;
+    this.netInfoUnsubscribe?.();
+    this.netInfoUnsubscribe = null;
   }
 
   private scheduleRetry(environmentId: string): void {
