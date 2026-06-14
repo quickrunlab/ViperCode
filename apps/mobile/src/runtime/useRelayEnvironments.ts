@@ -3,7 +3,7 @@ import { ManagedRelayClient } from "@vipercode/client-runtime";
 import type { RelayClientEnvironmentRecord } from "@vipercode/contracts/relay";
 import type { ManagedRelaySnapshotState } from "@vipercode/client-runtime";
 import * as Effect from "effect/Effect";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { mobileRuntime } from "./mobileRuntime.ts";
 
 export function useRelayEnvironments(): ManagedRelaySnapshotState<
@@ -19,6 +19,7 @@ export function useRelayEnvironments(): ManagedRelaySnapshotState<
     error: null,
     isPending: isSignedIn ?? false,
   });
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -57,10 +58,14 @@ export function useRelayEnvironments(): ManagedRelaySnapshotState<
     return () => {
       cancelled = true;
     };
-  }, [getToken, isSignedIn]);
+  }, [getToken, isSignedIn, refreshKey]);
+
+  const refresh = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   return {
     ...state,
-    refresh: () => {},
+    refresh,
   };
 }

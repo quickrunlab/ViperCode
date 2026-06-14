@@ -1,7 +1,17 @@
 import { useAuth, useSSO } from "@clerk/clerk-expo";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { theme } from "../theme/index.ts";
+
+export function maybeCompleteAuthSession(): void {
+  WebBrowser.maybeCompleteAuthSession();
+}
+
+function warmUpBrowser(): void {
+  void WebBrowser.warmUpAsync();
+  void WebBrowser.coolDownAsync();
+}
 
 function LoadingScreen() {
   return (
@@ -16,6 +26,10 @@ function SignInScreen() {
   const { isLoaded } = useAuth();
   const { startSSOFlow } = useSSO();
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    warmUpBrowser();
+  }, []);
 
   const signIn = useCallback(
     async (strategy: string) => {

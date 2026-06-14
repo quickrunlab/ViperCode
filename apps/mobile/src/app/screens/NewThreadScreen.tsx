@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../navigation/AppNavigator.tsx";
 import { theme } from "../../theme/index.ts";
@@ -8,14 +8,8 @@ import { ModelPickerSheet } from "../../components/ModelPickerSheet.tsx";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NewThread">;
 
-const MOCK_MODELS: ReadonlyArray<ModelOption> = [
-  { instanceId: "codex", label: "Codex (OpenAI)", model: "codex-gpt" },
-  { instanceId: "claude_agent", label: "Claude Agent", model: "claude-agent" },
-  { instanceId: "codex_personal", label: "Codex Personal", model: "personal" },
-];
-
 export function NewThreadScreen({ navigation, route }: Props) {
-  const { projects } = route.params;
+  const { environmentId: _envId, label: _label, projects, providers } = route.params;
 
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
@@ -23,6 +17,18 @@ export function NewThreadScreen({ navigation, route }: Props) {
   const [selectedModel, setSelectedModel] = useState<ModelOption | null>(null);
   const [modelPickerVisible, setModelPickerVisible] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  const modelOptions = useMemo<ReadonlyArray<ModelOption>>(
+    () =>
+      providers
+        .filter((p) => p.availability === "ready")
+        .map((p) => ({
+          instanceId: p.instanceId,
+          label: p.label,
+          model: "",
+        })),
+    [providers],
+  );
 
   const handleCreate = useCallback(() => {
     if (creating || !title.trim() || !message.trim() || !selectedProjectId) return;
@@ -110,7 +116,7 @@ export function NewThreadScreen({ navigation, route }: Props) {
 
       <ModelPickerSheet
         visible={modelPickerVisible}
-        options={MOCK_MODELS}
+        options={modelOptions}
         selected={selectedModel}
         onSelect={setSelectedModel}
         onClose={() => setModelPickerVisible(false)}

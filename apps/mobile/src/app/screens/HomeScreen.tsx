@@ -11,7 +11,7 @@ import type {
   MobileConnectionState,
 } from "../../runtime/clientRuntimeImports.ts";
 import { useRelayEnvironments } from "../../runtime/useRelayEnvironments.ts";
-import { useConnectionStore } from "../../connections/ConnectionProvider.tsx";
+import { useConnectionStore, useConnectionService } from "../../connections/ConnectionProvider.tsx";
 import { hasRelayConfig } from "../../runtime/mobileRuntime.ts";
 import { resolveMobilePublicConfig } from "../../runtime/resolveConfig.ts";
 
@@ -35,6 +35,7 @@ function statusColor(state: MobileConnectionState): string {
 export function HomeScreen({ navigation }: Props) {
   const { isSignedIn } = useAuth();
   const store = useConnectionStore();
+  const service = useConnectionService();
   const relay = useRelayEnvironments();
   const [pairedEnvs, setPairedEnvs] = useState<ReadonlyArray<MobileKnownEnvironmentRecord>>([]);
 
@@ -99,6 +100,7 @@ export function HomeScreen({ navigation }: Props) {
               <Pressable
                 style={styles.envRow}
                 onPress={() => {
+                  void service.connectEnvironment(item.environmentId);
                   navigation.navigate("EnvironmentThreads", {
                     environmentId: item.environmentId,
                     label: item.label,

@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { ProviderApprovalDecision, ThreadId } from "@vipercode/contracts";
+import type { EnvironmentId, ProviderApprovalDecision, ThreadId } from "@vipercode/contracts";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -26,10 +26,15 @@ import { ProviderStatusBanner } from "../../components/ProviderStatusBanner.tsx"
 import { ChangedFilesSection } from "../../components/ChangedFilesSection.tsx";
 import { DiffView } from "../../components/DiffView.tsx";
 import type { DiffFileEntry } from "../../thread/threadTypes.ts";
+import {
+  getEnvironmentClient,
+  subscribeThreadDetail,
+} from "../../connections/environmentClient.ts";
+import { useConnectionService } from "../../connections/ConnectionProvider.tsx";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ThreadDetail">;
 
-function generateMessageId(): string {
+function newId(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let id = "";
   for (let i = 0; i < 24; i++) {
@@ -39,13 +44,16 @@ function generateMessageId(): string {
 }
 
 export function ThreadDetailScreen({ navigation, route }: Props) {
-  const { threadId, title } = route.params;
+  const { environmentId, threadId, title } = route.params;
   const tid = threadId as ThreadId;
+  const eid = environmentId as EnvironmentId;
   const detail = useThreadDetail(tid);
   const flatListRef = useRef<FlatList<ThreadMessage>>(null);
   const [sending, setSending] = useState(false);
   const [sendGuard, setSendGuard] = useState<string | null>(null);
   const [viewingDiffTurn, setViewingDiffTurn] = useState<string | null>(null);
+  const [providerStatuses, setProviderStatuses] = useState<ReadonlyArray<ProviderStatus>>([]);
+  const service = useConnectionService();
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
@@ -54,8 +62,48 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     navigation.setOptions({ title: title || "Thread" });
     setThreadDetail(tid, { ...EMPTY_THREAD_DETAIL, threadId: tid, isPending: true });
-    scrollToEnd();
-  }, [tid, title, navigation, scrollToEnd]);
+
+    const unsub = subscribeThreadDetail(eid, tid);
+
+    return () => {
+      unsub();
+    };
+  }, [eid, tid, title, navigation]);
+
+  useEffect(() => {
+    const client = getEnvironmentClient(eid);
+    if (!client) return;
+    const unsub = client.server.subscribeConfig((event) => {
+      if (event.type !== "snapshot") return;
+      const providers = event.config.providers;
+      if (!providers) return;
+      const entries = Object.entries(providers);
+      setProviderStatuses(
+        entries.map(([instanceId, p]) => ({
+          instanceId,
+          label: p.displayName ?? p.driver,
+          driverLabel: p.driver,
+          availability:
+            p.status === "ready"
+              ? ("ready" as const)
+              : p.status === "disabled" || !p.enabled
+                ? ("needs-setup" as const)
+                : ("unavailable" as const),
+          message: p.auth?.status === "unauthenticated" ? "Auth required" : null,
+        })),
+      );
+    });
+    return () => unsub();
+  }, [eid]);
+
+  const dispatchCommand = useCallback(
+    async (command: Record<string, unknown>) => {
+      const client = getEnvironmentClient(eid);
+      if (!client) return;
+      await client.orchestration.dispatchCommand(command as never);
+    },
+    [eid],
+  );
 
   const handleSend = useCallback(
     (text: string) => {
@@ -64,70 +112,106 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
       setSending(true);
       setSendGuard(text);
 
-      const now = new Date().toISOString();
-      const messageId = generateMessageId();
-      const userMessage: ThreadMessage = {
-        id: messageId,
-        role: "user",
-        text,
-        streaming: false,
-        turnId: null,
-        createdAt: now,
-      };
+      const messageId = newId();
+      const commandId = newId();
 
-      const current = { ...detail };
-      if (current.messages.length === 0 && current.threadId === ("" as ThreadId)) {
-        current.threadId = tid;
-      }
-      current.messages = [...current.messages, userMessage];
-      setThreadDetail(tid, { ...current, isPending: false });
-
-      setTimeout(() => {
-        setSending(false);
-        setSendGuard(null);
-        scrollToEnd();
-      }, 300);
+      void dispatchCommand({
+        type: "thread.turn.start",
+        commandId,
+        threadId: tid,
+        message: {
+          messageId,
+          role: "user",
+          text,
+          attachments: [],
+        },
+        runtimeMode: "full-access",
+        interactionMode: "default",
+        createdAt: new Date().toISOString(),
+      }).finally(() => {
+        setTimeout(() => {
+          setSending(false);
+          setSendGuard(null);
+          scrollToEnd();
+        }, 300);
+      });
     },
-    [detail, tid, scrollToEnd, sending, sendGuard],
+    [tid, dispatchCommand, scrollToEnd, sending, sendGuard],
   );
 
   const handleApprovalRespond = useCallback(
-    (_requestId: string, _decision: ProviderApprovalDecision) => {
-      // TODO: dispatch ThreadApprovalRespondCommand via client RPC
-      const current = { ...detail };
-      setThreadDetail(tid, {
-        ...current,
-        hasPendingApprovals: false,
-        pendingApprovals: [],
+    (requestId: string, decision: ProviderApprovalDecision) => {
+      void dispatchCommand({
+        type: "thread.approval.respond",
+        commandId: newId(),
+        threadId: tid,
+        requestId,
+        decision,
+        createdAt: new Date().toISOString(),
       });
     },
-    [detail, tid],
+    [tid, dispatchCommand],
   );
 
   const handleUserInputSubmit = useCallback(
-    (_requestId: string, _answers: Record<string, unknown>) => {
-      // TODO: dispatch ThreadUserInputRespondCommand via client RPC
-      const current = { ...detail };
-      setThreadDetail(tid, {
-        ...current,
-        hasPendingUserInput: false,
-        pendingUserInputs: [],
+    (requestId: string, answers: Record<string, unknown>) => {
+      void dispatchCommand({
+        type: "thread.user-input.respond",
+        commandId: newId(),
+        threadId: tid,
+        requestId,
+        answers,
+        createdAt: new Date().toISOString(),
       });
     },
-    [detail, tid],
+    [tid, dispatchCommand],
   );
 
   const handleStop = useCallback(() => {
-    // TODO: dispatch ThreadTurnInterruptCommand via client RPC
-  }, []);
+    void dispatchCommand({
+      type: "thread.turn.interrupt",
+      commandId: newId(),
+      threadId: tid,
+      createdAt: new Date().toISOString(),
+    });
+  }, [tid, dispatchCommand]);
 
   const handleRetry = useCallback(() => {
-    // TODO: trigger reconnect for this environment
-  }, []);
+    void service.reconnectEnvironment(eid);
+  }, [eid, service]);
 
-  const handleOpenDiff = useCallback((turnId: string, _filePath?: string) => {
-    setViewingDiffTurn(turnId);
-  }, []);
+  const handleOpenDiff = useCallback(
+    async (turnId: string, _filePath?: string) => {
+      const client = getEnvironmentClient(eid);
+      if (!client) return;
+      setViewingDiffTurn(turnId);
+      try {
+        const result = await client.orchestration.getFullThreadDiff({
+          threadId: tid,
+          toTurnCount: 1,
+        });
+        const current = { ...detail };
+        setThreadDetail(tid, {
+          ...current,
+          activeTurnDiff: {
+            turnId,
+            isPending: false,
+            files: [
+              {
+                path: result.threadId as unknown as string,
+                diff: result.diff,
+                truncated: false,
+              },
+            ],
+            error: null,
+          },
+        });
+      } catch {
+        // diff fetch failed, show empty diff
+      }
+    },
+    [eid, tid, detail],
+  );
 
   const handleCloseDiff = useCallback(() => {
     setViewingDiffTurn(null);
@@ -140,23 +224,6 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
     detail.pendingUserInputs.length > 0 ||
     detail.plans.length > 0 ||
     detail.checkpoints.length > 0;
-
-  const providerStatuses: ReadonlyArray<ProviderStatus> = [
-    {
-      instanceId: "codex",
-      label: "Codex (OpenAI)",
-      driverLabel: "codex",
-      availability: "ready",
-      message: null,
-    },
-    {
-      instanceId: "claude_agent",
-      label: "Claude Agent",
-      driverLabel: "claude",
-      availability: "unavailable",
-      message: "API key required",
-    },
-  ];
 
   const renderHeader = useCallback(() => {
     if (detail.isPending && !hasControls) return null;
@@ -270,7 +337,7 @@ function resolveDiffFiles(
 
   return cp.files.map((f) => ({
     path: f.path,
-    diff: `--- a/${f.path}\n+++ b/${f.path}\n@@ -0,0 +1,${f.additions} @@\n${"+placeholder line".repeat(Math.min(f.additions, 5)).split("placeholder").join("+\n")}`,
+    diff: `--- a/${f.path}\n+++ b/${f.path}\n@@ -0,0 +1,${f.additions} @@\n${"+".repeat(Math.min(f.additions, 5))}\n--- unchanged ---`,
     truncated: true,
   }));
 }

@@ -22,6 +22,7 @@ import { exchangePairingCredential } from "../../pairing/exchangePairingCredenti
 import { saveKnownEnvironment, saveEnvironmentCredential } from "../../storage/environmentStore.ts";
 import type { MobileKnownEnvironmentRecord } from "../../runtime/clientRuntimeImports.ts";
 import { mobileRuntime } from "../../runtime/mobileRuntime.ts";
+import { useConnectionService } from "../../connections/ConnectionProvider.tsx";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Pair">;
 
@@ -37,6 +38,7 @@ export function PairScreen({ navigation }: Props) {
   const [status, setStatus] = useState<PairStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [successLabel, setSuccessLabel] = useState("");
+  const service = useConnectionService();
 
   const handleExchange = useCallback(async (outcome: PairingParseOutcome) => {
     if (!outcome.ok) {
@@ -65,6 +67,8 @@ export function PairScreen({ navigation }: Props) {
       await saveKnownEnvironment(record);
       await saveEnvironmentCredential(result.environmentId, result.bearerToken);
 
+      void service.connectEnvironment(result.environmentId);
+
       setStatus("success");
       setSuccessLabel(result.environmentLabel);
     } catch (cause) {
@@ -92,7 +96,7 @@ export function PairScreen({ navigation }: Props) {
   if (status === "success") {
     return (
       <View style={styles.container}>
-        <Text style={styles.successTitle}>Connected</Text>
+        <Text style={styles.successTitle}>Environment Paired</Text>
         <Text style={styles.successLabel}>{successLabel}</Text>
         <Pressable style={styles.button} onPress={() => navigation.goBack()}>
           <Text style={styles.buttonText}>Done</Text>

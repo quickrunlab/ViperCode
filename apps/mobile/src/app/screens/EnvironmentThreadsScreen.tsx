@@ -1,11 +1,12 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { EnvironmentId, ThreadId } from "@vipercode/contracts";
-import React, { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../navigation/AppNavigator.tsx";
 import { theme } from "../../theme/index.ts";
 import { useShellSnapshot } from "../../shell/useShellSnapshot.ts";
 import type { ProviderStatus } from "../../components/ProviderStatusBanner.tsx";
+import { getEnvironmentClient } from "../../connections/environmentClient.ts";
 
 type Props = NativeStackScreenProps<RootStackParamList, "EnvironmentThreads">;
 
@@ -51,29 +52,42 @@ export function EnvironmentThreadsScreen({ navigation, route }: Props) {
   const shell = useShellSnapshot(environmentId as EnvironmentId);
 
   useEffect(() => {
-    // Connection and shell subscription start when this screen mounts.
-    // For now the shell is populated via setShellState from connection layer.
+    // Shell state is populated by the connection layer via setShellState.
   }, [environmentId]);
 
-  const providers: ReadonlyArray<ProviderStatus> = useMemo(
-    () => [
-      {
-        instanceId: "codex",
-        label: "Codex (OpenAI)",
-        driverLabel: "codex",
-        availability: "ready" as const,
-        message: null,
-      },
-      {
-        instanceId: "claude_agent",
-        label: "Claude Agent",
-        driverLabel: "claude",
-        availability: "needs-setup" as const,
-        message: "API key not configured",
-      },
-    ],
-    [],
-  );
+  const providers: ReadonlyArray<ProviderStatus> = useMemo(() => [], []);
+
+  const [_providersForNav, setProvidersForNav] = useState<
+    ReadonlyArray<ProviderStatus>
+  >([]);
+
+  useEffect(() => {
+    const eid = environmentId as EnvironmentId;
+    const client = getEnvironmentClient(eid);
+    if (!client) return;
+    const unsub = client.server.subscribeConfig((event) => {
+      if (event.type !== "snapshot") return;
+      const provs = event.config.providers;
+      if (!provs) return;
+      const entries = Object.entries(provs);
+      setProvidersForNav(
+        entries.map(([instanceId, p]) => ({
+          instanceId,
+          label: p.displayName ?? p.driver,
+          driverLabel: p.driver,
+          availability:
+            p.status === "ready"
+              ? ("ready" as const)
+              : p.status === "disabled" || !p.enabled
+                ? ("needs-setup" as const)
+                : ("unavailable" as const),
+          message:
+            p.auth?.status === "unauthenticated" ? "Auth required" : null,
+        })),
+      );
+    });
+    return () => unsub();
+  }, [environmentId]);
 
   const headerRight = useCallback(
     () => (
@@ -87,7 +101,7 @@ export function EnvironmentThreadsScreen({ navigation, route }: Props) {
               title: p.title,
               workspaceRoot: p.workspaceRoot,
             })),
-            providers,
+              providers: _providersForNav,
           })
         }
         hitSlop={8}
@@ -157,6 +171,7 @@ export function EnvironmentThreadsScreen({ navigation, route }: Props) {
           style={styles.threadRow}
           onPress={() =>
             navigation.navigate("ThreadDetail", {
+              environmentId,
               threadId: item.id as ThreadId,
               title: item.title,
             })

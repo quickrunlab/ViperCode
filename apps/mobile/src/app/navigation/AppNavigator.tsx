@@ -13,7 +13,7 @@ export type RootStackParamList = {
   Home: undefined;
   Pair: undefined;
   EnvironmentThreads: { environmentId: string; label: string };
-  ThreadDetail: { threadId: string; title: string };
+  ThreadDetail: { environmentId: string; threadId: string; title: string };
   NewThread: {
     environmentId: string;
     label: string;
