@@ -1,6 +1,6 @@
 {
   "name": "@vipercode/mobile",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "private": true,
   "main": "App.tsx",
   "scripts": {
@@ -26,6 +26,8 @@
     "@vipercode/shared": "workspace:*",
     "effect": "catalog:",
     "expo": "~53.0.0",
+    "expo-application": "~6.1.5",
+    "expo-auth-session": "~6.2.1",
     "expo-camera": "~16.1.11",
     "expo-constants": "~17.1.8",
     "expo-crypto": "~14.1.5",
