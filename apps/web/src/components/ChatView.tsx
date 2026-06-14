@@ -2894,6 +2894,12 @@ export default function ChatView(props: ChatViewProps) {
         ? parseStandaloneComposerSlashCommand(trimmed)
         : null;
     if (standaloneSlashCommand) {
+      if (standaloneSlashCommand === "status") {
+        promptRef.current = "";
+        clearComposerDraftContent(composerDraftTarget);
+        composerRef.current?.resetCursorState();
+        return;
+      }
       handleInteractionModeChange(standaloneSlashCommand);
       promptRef.current = "";
       clearComposerDraftContent(composerDraftTarget);
