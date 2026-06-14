@@ -39,6 +39,35 @@ export interface PendingUserInput {
   readonly createdAt: string;
 }
 
+export interface CheckpointFile {
+  readonly path: string;
+  readonly kind: string;
+  readonly additions: number;
+  readonly deletions: number;
+  readonly hasStat: boolean;
+}
+
+export interface TurnCheckpoint {
+  readonly turnId: string;
+  readonly checkpointTurnCount: number;
+  readonly files: ReadonlyArray<CheckpointFile>;
+  readonly assistantMessageId: string | null;
+  readonly completedAt: string;
+}
+
+export interface DiffFileEntry {
+  readonly path: string;
+  readonly diff: string;
+  readonly truncated: boolean;
+}
+
+export interface TurnDiffState {
+  readonly turnId: string;
+  readonly isPending: boolean;
+  readonly files: ReadonlyArray<DiffFileEntry>;
+  readonly error: string | null;
+}
+
 export interface ThreadSummary {
   readonly threadId: ThreadId;
   readonly title: string;
@@ -54,6 +83,8 @@ export interface ThreadDetailState {
   readonly activities: ReadonlyArray<ThreadActivity>;
   readonly pendingApprovals: ReadonlyArray<PendingApproval>;
   readonly pendingUserInputs: ReadonlyArray<PendingUserInput>;
+  readonly checkpoints: ReadonlyArray<TurnCheckpoint>;
+  readonly activeTurnDiff: TurnDiffState | null;
   readonly status: string;
   readonly hasPendingApprovals: boolean;
   readonly hasPendingUserInput: boolean;
@@ -68,6 +99,8 @@ export const EMPTY_THREAD_DETAIL: ThreadDetailState = {
   activities: [],
   pendingApprovals: [],
   pendingUserInputs: [],
+  checkpoints: [],
+  activeTurnDiff: null,
   status: "idle",
   hasPendingApprovals: false,
   hasPendingUserInput: false,

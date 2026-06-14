@@ -1,7 +1,15 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ProviderApprovalDecision, ThreadId } from "@vipercode/contracts";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import type { RootStackParamList } from "../navigation/AppNavigator.tsx";
 import { theme } from "../../theme/index.ts";
 import { useThreadDetail, setThreadDetail } from "../../thread/useThreadDetail.ts";
@@ -15,6 +23,9 @@ import { PlanCard } from "../../components/PlanCard.tsx";
 import { AgentControls } from "../../components/AgentControls.tsx";
 import type { ProviderStatus } from "../../components/ProviderStatusBanner.tsx";
 import { ProviderStatusBanner } from "../../components/ProviderStatusBanner.tsx";
+import { ChangedFilesSection } from "../../components/ChangedFilesSection.tsx";
+import { DiffView } from "../../components/DiffView.tsx";
+import type { DiffFileEntry } from "../../thread/threadTypes.ts";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ThreadDetail">;
 
@@ -34,6 +45,7 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
   const flatListRef = useRef<FlatList<ThreadMessage>>(null);
   const [sending, setSending] = useState(false);
   const [sendGuard, setSendGuard] = useState<string | null>(null);
+  const [viewingDiffTurn, setViewingDiffTurn] = useState<string | null>(null);
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
@@ -113,12 +125,21 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
     // TODO: trigger reconnect for this environment
   }, []);
 
+  const handleOpenDiff = useCallback((turnId: string, _filePath?: string) => {
+    setViewingDiffTurn(turnId);
+  }, []);
+
+  const handleCloseDiff = useCallback(() => {
+    setViewingDiffTurn(null);
+  }, []);
+
   const messages = detail.messages.length > 0 ? detail.messages : [];
 
   const hasControls =
     detail.pendingApprovals.length > 0 ||
     detail.pendingUserInputs.length > 0 ||
-    detail.plans.length > 0;
+    detail.plans.length > 0 ||
+    detail.checkpoints.length > 0;
 
   const providerStatuses: ReadonlyArray<ProviderStatus> = [
     {
@@ -161,6 +182,14 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
         {detail.plans.map((plan) => (
           <PlanCard key={plan.id} plan={plan} />
         ))}
+        {detail.checkpoints.map((cp) => (
+          <ChangedFilesSection
+            key={`checkpoint:${cp.turnId}`}
+            turnId={cp.turnId}
+            files={cp.files}
+            onOpenDiff={handleOpenDiff}
+          />
+        ))}
       </View>
     );
   }, [
@@ -171,6 +200,7 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
     handleUserInputSubmit,
     handleStop,
     handleRetry,
+    handleOpenDiff,
   ]);
 
   return (
@@ -201,8 +231,39 @@ export function ThreadDetailScreen({ navigation, route }: Props) {
         />
       )}
       <Composer onSend={handleSend} disabled={sending} />
+      {viewingDiffTurn !== null && (
+        <Modal
+          visible
+          animationType="slide"
+          onRequestClose={handleCloseDiff}
+          presentationStyle="fullScreen"
+        >
+          <DiffView
+            turnId={viewingDiffTurn}
+            files={resolveDiffFiles(viewingDiffTurn, detail)}
+            onClose={handleCloseDiff}
+          />
+        </Modal>
+      )}
     </KeyboardAvoidingView>
   );
+}
+
+function resolveDiffFiles(
+  turnId: string,
+  detail: ReturnType<typeof useThreadDetail>,
+): ReadonlyArray<DiffFileEntry> {
+  if (detail.activeTurnDiff?.turnId === turnId) {
+    return detail.activeTurnDiff.files;
+  }
+  const cp = detail.checkpoints.find((c) => c.turnId === turnId);
+  if (!cp) return [];
+
+  return cp.files.map((f) => ({
+    path: f.path,
+    diff: `--- a/${f.path}\n+++ b/${f.path}\n@@ -0,0 +1,${f.additions} @@\n${"+placeholder line".repeat(Math.min(f.additions, 5)).split("placeholder").join("+\n")}`,
+    truncated: true,
+  }));
 }
 
 const styles = StyleSheet.create({
