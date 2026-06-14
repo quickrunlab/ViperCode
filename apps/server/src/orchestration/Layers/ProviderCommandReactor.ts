@@ -970,6 +970,7 @@ const make = Effect.gen(function* () {
     }
 
     const now = event.payload.createdAt;
+    threadModelSelections.delete(thread.id);
     if (thread.session && thread.session.status !== "stopped") {
       yield* providerService.stopSession({ threadId: thread.id });
     }

@@ -17,8 +17,9 @@ import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Result from "effect/Result";
 
-import type { CopilotModel, GitHubCopilotApiError } from "./githubCopilotApi.ts";
-import type { CopilotSession, GitHubCopilotAuthShape } from "./githubCopilotAuth.ts";
+import type { CopilotModel } from "./githubCopilotApi.ts";
+import type { GitHubCopilotAuthShape } from "./githubCopilotAuth.ts";
+import { DEFAULT_COPILOT_CLI_MODELS, mapCopilotCliModels } from "./githubCopilotCliModels.ts";
 import { withTemporaryModelAvailability } from "../../temporaryModelAvailability.ts";
 
 export const GITHUB_COPILOT_DRIVER_KIND = ProviderDriverKind.make("githubCopilot");
@@ -154,6 +155,21 @@ const baseSnapshot = (input: {
   skills: [],
 });
 
+/**
+ * Models offered to the picker. They are the GitHub Copilot CLI's own accepted
+ * `--model` ids (probed live, default list as fallback) — never the HTTP
+ * `/models` catalog — so every selectable id is a valid spawn argument.
+ */
+function copilotModelsFromCli(
+  cliModels: ReadonlyArray<string>,
+  customModels: ReadonlyArray<string>,
+): ReadonlyArray<ServerProviderModel> {
+  return mapCopilotCliModels(
+    cliModels.length > 0 ? cliModels : DEFAULT_COPILOT_CLI_MODELS,
+    customModels,
+  );
+}
+
 /** Snapshot used before the first auth check completes. */
 export function makePendingCopilotSnapshot(input: {
   readonly instanceId: ProviderInstanceId;
@@ -164,19 +180,22 @@ export function makePendingCopilotSnapshot(input: {
     status: "warning",
     auth: { status: "unknown" },
     message: "Checking GitHub Copilot sign-in…",
-    models: mapCopilotModels([], [], { includeBuiltIns: true }),
+    models: copilotModelsFromCli(DEFAULT_COPILOT_CLI_MODELS, []),
   };
 }
 
-/** Live health check: reflects sign-in state and the fetched model catalog. */
+/**
+ * Live health check: reflects sign-in state and the GitHub Copilot CLI's model
+ * catalog. Chat runs through `copilot --acp`, so the offered models are the
+ * CLI's accepted `--model` ids (via `getCliModels`), not the HTTP catalog —
+ * keeping the picker and the spawn argument in the same vocabulary.
+ */
 export function checkCopilotProviderStatus(input: {
   readonly instanceId: ProviderInstanceId;
   readonly enabled: boolean;
   readonly customModels: ReadonlyArray<string>;
   readonly auth: GitHubCopilotAuthShape;
-  readonly fetchModels: (
-    session: CopilotSession,
-  ) => Effect.Effect<ReadonlyArray<CopilotModel>, GitHubCopilotApiError>;
+  readonly getCliModels: Effect.Effect<ReadonlyArray<string>>;
 }): Effect.Effect<ServerProvider> {
   return Effect.gen(function* () {
     const checkedAt = yield* nowIso;
@@ -188,6 +207,9 @@ export function checkCopilotProviderStatus(input: {
         models: [],
       } satisfies ServerProvider;
     }
+
+    const cliModels = yield* input.getCliModels;
+    const models = copilotModelsFromCli(cliModels, input.customModels);
 
     const flow = yield* input.auth.ensureDeviceFlow.pipe(
       Effect.orElseSucceed(
@@ -201,7 +223,7 @@ export function checkCopilotProviderStatus(input: {
         auth: { status: "unauthenticated" },
         message: `Open ${flow.verificationUri} and enter code ${flow.userCode} to finish signing in.`,
         deviceAuth: { userCode: flow.userCode, verificationUri: flow.verificationUri },
-        models: mapCopilotModels([], input.customModels, { includeBuiltIns: true }),
+        models,
       } satisfies ServerProvider;
     }
     if (flow._tag === "unavailable") {
@@ -210,32 +232,24 @@ export function checkCopilotProviderStatus(input: {
         status: "warning",
         auth: { status: "unauthenticated" },
         message: flow.reason,
-        models: mapCopilotModels([], input.customModels, { includeBuiltIns: true }),
+        models,
       } satisfies ServerProvider;
     }
 
-    const modelResult = yield* input.auth.getSessionToken.pipe(
-      Effect.flatMap((session) => input.fetchModels(session)),
-      Effect.result,
-    );
-
-    if (Result.isFailure(modelResult)) {
+    // Confirm the stored OAuth token still exchanges for a session token — this
+    // backs text generation and signals a dead/expired credential clearly.
+    const sessionResult = yield* input.auth.getSessionToken.pipe(Effect.result);
+    if (Result.isFailure(sessionResult)) {
       return {
         ...baseSnapshot({ ...input, checkedAt }),
         status: "warning",
         auth: { status: "authenticated", type: "GitHub Copilot" },
         message:
-          "Signed in, but the live model catalog could not be refreshed " +
-          `(${modelResult.failure.message}). Showing default GitHub Copilot models.`,
-        models: mapCopilotModels([], input.customModels, { includeBuiltIns: true }),
+          "Signed in, but the GitHub Copilot session could not be refreshed " +
+          `(${sessionResult.failure.message}).`,
+        models,
       } satisfies ServerProvider;
     }
-
-    const mappedModels = mapCopilotModels(modelResult.success, input.customModels);
-    const models =
-      mappedModels.length > 0
-        ? mappedModels
-        : mapCopilotModels([], input.customModels, { includeBuiltIns: true });
 
     return {
       ...baseSnapshot({ ...input, checkedAt }),
