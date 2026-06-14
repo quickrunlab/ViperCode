@@ -3,11 +3,13 @@ import {
   type ModelCapabilities,
   type OpenCodeSettings,
   type ServerProviderModel,
+  type ServerProviderSkill,
 } from "@vipercode/contracts";
 import * as Cause from "effect/Cause";
 import * as Data from "effect/Data";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
+import * as Types from "effect/Types";
 
 import { createModelCapabilities } from "@vipercode/shared/model";
 import { compareSemverVersions } from "@vipercode/shared/semver";
@@ -23,7 +25,7 @@ import {
   openCodeRuntimeErrorDetail,
   type OpenCodeInventory,
 } from "../opencodeRuntime.ts";
-import type { Agent, ProviderListResponse } from "@opencode-ai/sdk/v2";
+import type { Agent, ProviderListResponse, SkillV2Info } from "@opencode-ai/sdk/v2";
 
 const PROVIDER = ProviderDriverKind.make("opencode");
 const OPENCODE_PRESENTATION = {
@@ -252,6 +254,20 @@ function flattenOpenCodeModels(input: OpenCodeInventory): ReadonlyArray<ServerPr
   return models.toSorted((left, right) => left.name.localeCompare(right.name));
 }
 
+function mapOpenCodeSkills(skills: ReadonlyArray<SkillV2Info>): ReadonlyArray<ServerProviderSkill> {
+  return skills.map((skill) => {
+    const parsed: Types.Mutable<ServerProviderSkill> = {
+      name: skill.name,
+      path: skill.location,
+      enabled: true,
+    };
+    if (skill.description) {
+      parsed.shortDescription = skill.description;
+    }
+    return parsed;
+  });
+}
+
 export const makePendingOpenCodeProvider = (
   openCodeSettings: OpenCodeSettings,
 ): Effect.Effect<ServerProviderDraft> =>
@@ -447,6 +463,7 @@ export const checkOpenCodeProviderStatus = Effect.fn("checkOpenCodeProviderStatu
     enabled: true,
     checkedAt,
     models,
+    skills: mapOpenCodeSkills(inventoryExit.value.skills),
     probe: {
       installed: true,
       version,

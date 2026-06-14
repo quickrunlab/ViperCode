@@ -10,6 +10,7 @@ import {
   type ProviderListResponse,
   type QuestionAnswer,
   type QuestionRequest,
+  type SkillV2Info,
 } from "@opencode-ai/sdk/v2";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
@@ -98,6 +99,7 @@ export interface OpenCodeCommandResult {
 export interface OpenCodeInventory {
   readonly providerList: ProviderListResponse;
   readonly agents: ReadonlyArray<Agent>;
+  readonly skills: ReadonlyArray<SkillV2Info>;
 }
 
 export interface ParsedOpenCodeModelSlug {
@@ -529,10 +531,15 @@ const makeOpenCodeRuntime = Effect.gen(function* () {
       Effect.map((result) => result.data ?? []),
     );
 
-  const loadOpenCodeInventory: OpenCodeRuntimeShape["loadOpenCodeInventory"] = (client) =>
-    Effect.all([loadProviders(client), loadAgents(client)], { concurrency: "unbounded" }).pipe(
-      Effect.map(([providerList, agents]) => ({ providerList, agents })),
+  const loadSkills = (client: OpencodeClient) =>
+    runOpenCodeSdk("app.skills", () => client.app.skills()).pipe(
+      Effect.map((result) => result.data ?? []),
     );
+
+  const loadOpenCodeInventory: OpenCodeRuntimeShape["loadOpenCodeInventory"] = (client) =>
+    Effect.all([loadProviders(client), loadAgents(client), loadSkills(client)], {
+      concurrency: "unbounded",
+    }).pipe(Effect.map(([providerList, agents, skills]) => ({ providerList, agents, skills })));
 
   return {
     startOpenCodeServerProcess,
