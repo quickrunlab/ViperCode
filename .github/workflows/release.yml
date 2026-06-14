@@ -73,7 +73,9 @@ jobs:
 
       - name: Build release APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
 
       - name: Copy APK
         run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk ./viper-code-mobile.apk
