@@ -57,9 +57,7 @@ export function EnvironmentThreadsScreen({ navigation, route }: Props) {
 
   const providers: ReadonlyArray<ProviderStatus> = useMemo(() => [], []);
 
-  const [_providersForNav, setProvidersForNav] = useState<
-    ReadonlyArray<ProviderStatus>
-  >([]);
+  const [_providersForNav, setProvidersForNav] = useState<ReadonlyArray<ProviderStatus>>([]);
 
   useEffect(() => {
     const eid = environmentId as EnvironmentId;
@@ -81,8 +79,7 @@ export function EnvironmentThreadsScreen({ navigation, route }: Props) {
               : p.status === "disabled" || !p.enabled
                 ? ("needs-setup" as const)
                 : ("unavailable" as const),
-          message:
-            p.auth?.status === "unauthenticated" ? "Auth required" : null,
+          message: p.auth?.status === "unauthenticated" ? "Auth required" : null,
         })),
       );
     });
@@ -101,7 +98,7 @@ export function EnvironmentThreadsScreen({ navigation, route }: Props) {
               title: p.title,
               workspaceRoot: p.workspaceRoot,
             })),
-              providers: _providersForNav,
+            providers: _providersForNav,
           })
         }
         hitSlop={8}

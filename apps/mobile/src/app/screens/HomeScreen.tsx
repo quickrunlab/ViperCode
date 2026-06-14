@@ -66,9 +66,15 @@ export function HomeScreen({ navigation }: Props) {
               <Text style={styles.subtitle}>No environments yet.</Text>
               <Text style={styles.hint}>
                 {hasRelayConfig
-                  ? "Enable Viper Connect on your PC under Settings > Connections, or pair manually below."
-                  : "Relay is not configured. Pair manually using a QR code or pairing URL."}
+                  ? "Enable Viper Connect on your desktop under Settings > Connections, or pair manually below."
+                  : "Pair with your desktop over Tailscale or LAN using the button below."}
               </Text>
+              <Pressable
+                style={styles.pairButtonPrimary}
+                onPress={() => navigation.navigate("Pair")}
+              >
+                <Text style={styles.pairButtonPrimaryText}>Pair Environment</Text>
+              </Pressable>
             </>
           ) : (
             <>
@@ -119,9 +125,7 @@ export function HomeScreen({ navigation }: Props) {
         />
       )}
 
-      {isSignedIn ? null : (
-        <Text style={styles.signInHint}>Sign in to see relay-connected environments.</Text>
-      )}
+      {isSignedIn ? null : <Text style={styles.signInHint}>Sign in to see your environments.</Text>}
 
       <Pressable style={styles.pairButton} onPress={() => navigation.navigate("Pair")}>
         <Text style={styles.pairButtonText}>Pair Environment</Text>
@@ -209,6 +213,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pairButtonText: {
+    color: theme.colors.background,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  pairButtonPrimary: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 8,
+    padding: theme.spacing.md,
+    alignItems: "center",
+    marginTop: theme.spacing.lg,
+    minWidth: 200,
+  },
+  pairButtonPrimaryText: {
     color: theme.colors.background,
     fontSize: 15,
     fontWeight: "600",

@@ -5,5 +5,5 @@ export interface MobilePublicConfig {
 }
 
 export function hasMobilePublicConfig(config: MobilePublicConfig): boolean {
-  return Boolean(config.clerkPublishableKey && config.clerkJwtTemplate && config.relayUrl);
+  return Boolean(config.clerkPublishableKey && config.clerkJwtTemplate);
 }

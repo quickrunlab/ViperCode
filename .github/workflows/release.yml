@@ -70,7 +70,6 @@ jobs:
         env:
           EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY }}
           EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE }}
-          EXPO_PUBLIC_VIPERCODE_RELAY_URL: ${{ secrets.EXPO_PUBLIC_VIPERCODE_RELAY_URL }}
 
       - name: Build release APK
         working-directory: apps/mobile/android

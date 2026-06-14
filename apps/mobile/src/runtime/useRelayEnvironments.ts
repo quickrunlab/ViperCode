@@ -4,7 +4,8 @@ import type { RelayClientEnvironmentRecord } from "@vipercode/contracts/relay";
 import type { ManagedRelaySnapshotState } from "@vipercode/client-runtime";
 import * as Effect from "effect/Effect";
 import { useCallback, useEffect, useState } from "react";
-import { mobileRuntime } from "./mobileRuntime.ts";
+import { mobileRuntime, hasRelayConfig } from "./mobileRuntime.ts";
+import { resolveMobilePublicConfig } from "./resolveConfig.ts";
 
 export function useRelayEnvironments(): ManagedRelaySnapshotState<
   ReadonlyArray<RelayClientEnvironmentRecord>
@@ -27,13 +28,19 @@ export function useRelayEnvironments(): ManagedRelaySnapshotState<
       return;
     }
 
+    if (!hasRelayConfig) {
+      setState({ data: null, error: null, isPending: false });
+      return;
+    }
+
     setState((prev) => ({ ...prev, isPending: true }));
 
     let cancelled = false;
 
     void (async () => {
       try {
-        const token = await getToken({ template: "viper-connect" });
+        const template = resolveMobilePublicConfig().clerkJwtTemplate ?? "viper-relay";
+        const token = await getToken({ template });
         if (!token) {
           if (!cancelled)
             setState({ data: null, error: "Could not get auth token.", isPending: false });

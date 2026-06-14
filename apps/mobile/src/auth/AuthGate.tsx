@@ -1,6 +1,7 @@
 import { useAuth, useSSO } from "@clerk/clerk-expo";
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { theme } from "../theme/index.ts";
 
@@ -8,8 +9,17 @@ export function maybeCompleteAuthSession(): void {
   WebBrowser.maybeCompleteAuthSession();
 }
 
+const OAUTH_REDIRECT_URL = Linking.createURL("auth/callback");
+
+if (Platform.OS !== "web") {
+  console.log("[ViperCode] OAuth redirect URL:", OAUTH_REDIRECT_URL);
+}
+
 function warmUpBrowser(): void {
   void WebBrowser.warmUpAsync();
+}
+
+function coolDownBrowser(): void {
   void WebBrowser.coolDownAsync();
 }
 
@@ -29,18 +39,27 @@ function SignInScreen() {
 
   useEffect(() => {
     warmUpBrowser();
+    return () => {
+      coolDownBrowser();
+    };
   }, []);
 
   const signIn = useCallback(
     async (strategy: string) => {
       setError(null);
       try {
-        const result = await startSSOFlow({ strategy: strategy as any });
+        await WebBrowser.warmUpAsync();
+        const result = await startSSOFlow({
+          strategy: strategy as any,
+          redirectUrl: OAUTH_REDIRECT_URL,
+        });
         if (result.authSessionResult?.type === "success") {
           await result.setActive?.({ session: result.createdSessionId! });
         }
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Sign-in failed.");
+      } finally {
+        void WebBrowser.coolDownAsync();
       }
     },
     [startSSOFlow],

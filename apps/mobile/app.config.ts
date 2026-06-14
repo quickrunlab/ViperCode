@@ -11,7 +11,7 @@ const relayUrl =
 const clerkJwtTemplate =
   process.env.EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE ??
   process.env.EXPO_PUBLIC_CLERK_JWT_TEMPLATE ??
-  "viper-connect";
+  "viper-relay";
 
 if (!clerkPublishableKey) {
   console.warn(
@@ -27,7 +27,7 @@ if (!relayUrl) {
 export default (): ExpoConfig => ({
   name: "Viper Code",
   slug: "viper-code",
-  version: "0.3.7",
+  version: "0.3.8",
   orientation: "portrait",
   scheme: "vipercode",
   userInterfaceStyle: "automatic",

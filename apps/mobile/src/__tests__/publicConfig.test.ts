@@ -20,13 +20,13 @@ describe("resolveMobilePublicConfig", () => {
     expect(hasMobilePublicConfig(config)).toBe(false);
   });
 
-  it("detects missing relay url", () => {
+  it("allows missing relay url", () => {
     const config: MobilePublicConfig = {
       clerkPublishableKey: "pk_test_abc",
       clerkJwtTemplate: "relay",
       relayUrl: undefined,
     };
-    expect(hasMobilePublicConfig(config)).toBe(false);
+    expect(hasMobilePublicConfig(config)).toBe(true);
   });
 
   it("detects missing jwt template", () => {
