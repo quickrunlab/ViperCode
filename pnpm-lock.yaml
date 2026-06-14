@@ -137,6 +137,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@babel/runtime':
+        specifier: ^7.29.0
+        version: 7.29.7
       '@clerk/clerk-expo':
         specifier: ^2.14.0
         version: 2.19.31(84078d3c85101015e6de55d116ac5b46)

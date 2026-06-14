@@ -1,6 +1,6 @@
 {
   "name": "@vipercode/mobile",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "private": true,
   "main": "App.tsx",
   "scripts": {
@@ -13,6 +13,7 @@
     "ios": "expo run:ios"
   },
   "dependencies": {
+    "@babel/runtime": "^7.29.0",
     "@clerk/clerk-expo": "^2.14.0",
     "@noble/curves": "catalog:",
     "@noble/hashes": "catalog:",
