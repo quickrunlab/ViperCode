@@ -206,13 +206,25 @@ const makeAcpSessionRuntime = (
         ),
       );
 
+    // On Windows the spawner runs through a shell so bare command names and
+    // `.cmd` shims resolve. Node concatenates argv for a shell WITHOUT escaping,
+    // so any command or argument containing whitespace (e.g. a workspace path
+    // like `--add-dir "C:\Viper Projects\..."`) gets split and the child sees
+    // mangled/extra arguments. Quote whitespace-bearing tokens for the shell.
+    const useShell = process.platform === "win32";
+    const quoteForShell = (value: string): string =>
+      useShell && /\s/.test(value) && !/^".*"$/.test(value) ? `"${value}"` : value;
     const child = yield* spawner
       .spawn(
-        ChildProcess.make(options.spawn.command, [...options.spawn.args], {
-          ...(options.spawn.cwd ? { cwd: options.spawn.cwd } : {}),
-          ...(options.spawn.env ? { env: { ...process.env, ...options.spawn.env } } : {}),
-          shell: process.platform === "win32",
-        }),
+        ChildProcess.make(
+          quoteForShell(options.spawn.command),
+          options.spawn.args.map(quoteForShell),
+          {
+            ...(options.spawn.cwd ? { cwd: options.spawn.cwd } : {}),
+            ...(options.spawn.env ? { env: { ...process.env, ...options.spawn.env } } : {}),
+            shell: useShell,
+          },
+        ),
       )
       .pipe(
         Effect.provideService(Scope.Scope, runtimeScope),
