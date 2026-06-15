@@ -201,15 +201,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
+    fontFamily: theme.font.sans,
   },
   emptyHint: {
-    fontSize: 14,
+    fontSize: 13,
     color: theme.colors.textSecondary,
     textAlign: "center",
+    fontFamily: theme.font.sans,
   },
   sectionHeader: {
     backgroundColor: theme.colors.background,
@@ -223,6 +225,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.textMuted,
     textTransform: "uppercase",
+    letterSpacing: 0.5,
+    fontFamily: theme.font.sans,
   },
   threadRow: {
     flexDirection: "row",
@@ -237,13 +241,15 @@ const styles = StyleSheet.create({
   },
   threadTitle: {
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "600",
     color: theme.colors.text,
+    fontFamily: theme.font.sans,
   },
   threadMeta: {
-    fontSize: 12,
+    fontSize: 13,
     color: theme.colors.textSecondary,
     marginTop: 2,
+    fontFamily: theme.font.sans,
   },
   statusDot: {
     width: 8,
@@ -255,5 +261,6 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 15,
     fontWeight: "600",
+    fontFamily: theme.font.sans,
   },
 });

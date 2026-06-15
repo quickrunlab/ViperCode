@@ -27,7 +27,7 @@ if (!relayUrl) {
 export default (): ExpoConfig => ({
   name: "Viper Code",
   slug: "viper-code",
-  version: "0.3.18",
+  version: "0.3.19",
   orientation: "portrait",
   scheme: "vipercode",
   userInterfaceStyle: "automatic",
@@ -37,7 +37,7 @@ export default (): ExpoConfig => ({
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#0D1117",
+      backgroundColor: "#0A0A0B",
     },
     edgeToEdgeEnabled: true,
   },
@@ -54,5 +54,14 @@ export default (): ExpoConfig => ({
         cameraPermission: "Allow Viper Code to access your camera to scan pairing QR codes.",
       },
     ],
+    [
+      "expo-build-properties",
+      {
+        android: {
+          usesCleartextTraffic: true,
+        },
+      },
+    ],
+    "expo-font",
   ],
 });

@@ -360,10 +360,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.sm,
+    fontFamily: theme.font.sans,
   },
   loadingHint: {
     fontSize: 13,
     color: theme.colors.textMuted,
     textAlign: "center",
+    fontFamily: theme.font.sans,
   },
 });

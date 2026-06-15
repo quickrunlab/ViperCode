@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.md,
+    fontFamily: theme.font.sans,
   },
   scrollArea: {
     maxHeight: "100%",
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   optionSelected: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.surfaceElevated,
     marginHorizontal: -theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
   },
@@ -118,11 +119,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     color: theme.colors.text,
+    fontFamily: theme.font.sans,
   },
   optionModel: {
     fontSize: 12,
     color: theme.colors.textMuted,
     marginTop: 2,
+    fontFamily: theme.font.sans,
   },
   checkmark: {
     width: 24,
@@ -134,7 +137,8 @@ const styles = StyleSheet.create({
   },
   checkmarkText: {
     fontSize: 14,
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
     fontWeight: "700",
+    fontFamily: theme.font.sans,
   },
 });

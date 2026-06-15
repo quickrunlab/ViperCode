@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.warning,
-    borderRadius: 12,
+    borderRadius: theme.radius.card,
     padding: theme.spacing.md,
     marginHorizontal: theme.spacing.md,
     marginVertical: theme.spacing.xs,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   kindBadge: {
     backgroundColor: theme.colors.warning,
-    borderRadius: 4,
+    borderRadius: theme.spacing.xs,
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginRight: theme.spacing.sm,
@@ -96,17 +96,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: theme.colors.background,
     textTransform: "uppercase",
+    fontFamily: theme.font.sans,
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
     color: theme.colors.text,
+    fontFamily: theme.font.sans,
   },
   summary: {
     fontSize: 13,
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.md,
     lineHeight: 18,
+    fontFamily: theme.font.sans,
   },
   actions: {
     flexDirection: "row",
@@ -114,7 +117,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: theme.radius.button,
     paddingVertical: theme.spacing.sm,
     alignItems: "center",
   },
@@ -134,16 +137,19 @@ const styles = StyleSheet.create({
   acceptText: {
     fontSize: 13,
     fontWeight: "600",
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
+    fontFamily: theme.font.sans,
   },
   acceptSessionText: {
     fontSize: 13,
     fontWeight: "600",
     color: theme.colors.success,
+    fontFamily: theme.font.sans,
   },
   declineText: {
     fontSize: 13,
     fontWeight: "600",
     color: theme.colors.error,
+    fontFamily: theme.font.sans,
   },
 });

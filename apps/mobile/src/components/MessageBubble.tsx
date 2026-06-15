@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: "85%",
-    borderRadius: 12,
+    borderRadius: theme.radius.card,
     padding: theme.spacing.md,
   },
   userBubble: {
@@ -49,9 +49,10 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: theme.font.sans,
   },
   userText: {
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
   },
   assistantText: {
     color: theme.colors.text,
@@ -60,5 +61,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: theme.colors.textMuted,
     marginTop: theme.spacing.xs,
+    fontFamily: theme.font.sans,
   },
 });

@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.primary,
-    borderRadius: 12,
+    borderRadius: theme.radius.card,
     padding: theme.spacing.md,
     marginHorizontal: theme.spacing.md,
     marginVertical: theme.spacing.xs,
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   badge: {
-    borderRadius: 4,
+    borderRadius: theme.spacing.xs,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
@@ -57,13 +57,14 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: "700",
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
     textTransform: "uppercase",
+    fontFamily: theme.font.sans,
   },
   planMarkdown: {
     fontSize: 13,
     color: theme.colors.textSecondary,
     lineHeight: 20,
-    fontFamily: "monospace",
+    fontFamily: theme.font.mono,
   },
 });

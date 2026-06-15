@@ -30,8 +30,8 @@ function diffLineColor(line: string): string | undefined {
 }
 
 function diffLineBg(line: string): string | undefined {
-  if (line.startsWith("+") && !line.startsWith("+++")) return "rgba(63,185,80,0.08)";
-  if (line.startsWith("-") && !line.startsWith("---")) return "rgba(248,81,73,0.08)";
+  if (line.startsWith("+") && !line.startsWith("+++")) return "rgba(16,185,129,0.08)";
+  if (line.startsWith("-") && !line.startsWith("---")) return "rgba(239,68,68,0.08)";
   return undefined;
 }
 
@@ -129,18 +129,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: theme.colors.text,
+    fontFamily: theme.font.sans,
   },
   closeButton: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
-    borderRadius: 6,
-    backgroundColor: theme.colors.background,
+    borderRadius: theme.spacing.sm,
+    backgroundColor: theme.colors.surfaceElevated,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   closeText: {
     fontSize: 13,
     color: theme.colors.textSecondary,
+    fontFamily: theme.font.sans,
   },
   scrollArea: {
     flex: 1,
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: theme.colors.text,
-    fontFamily: "monospace",
+    fontFamily: theme.font.mono,
     marginBottom: theme.spacing.xs,
   },
   fileActions: {
@@ -169,19 +171,21 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: theme.spacing.xs,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   actionText: {
     fontSize: 11,
     color: theme.colors.textMuted,
+    fontFamily: theme.font.sans,
   },
   truncatedBadge: {
     fontSize: 10,
     color: theme.colors.warning,
     fontWeight: "600",
     marginTop: theme.spacing.xs,
+    fontFamily: theme.font.sans,
   },
   diffScroll: {
     backgroundColor: theme.colors.surface,
@@ -193,7 +197,7 @@ const styles = StyleSheet.create({
   diffText: {
     fontSize: 11,
     color: theme.colors.textSecondary,
-    fontFamily: "monospace",
+    fontFamily: theme.font.mono,
     lineHeight: 18,
   },
 });

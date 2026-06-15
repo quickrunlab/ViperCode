@@ -82,16 +82,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: theme.colors.text,
+    fontFamily: theme.font.sans,
   },
   driver: {
     fontSize: 11,
     color: theme.colors.textMuted,
     marginTop: 1,
+    fontFamily: theme.font.sans,
   },
   message: {
     fontSize: 11,
     color: theme.colors.warning,
     marginTop: 2,
+    fontFamily: theme.font.sans,
   },
   statusDot: {
     width: 8,
@@ -105,5 +108,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
     fontStyle: "italic",
+    fontFamily: theme.font.sans,
   },
 });

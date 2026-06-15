@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 10,
+    borderRadius: theme.radius.card,
     marginHorizontal: theme.spacing.md,
     marginVertical: theme.spacing.xs,
     overflow: "hidden",
@@ -135,6 +135,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1,
+    fontFamily: theme.font.sans,
   },
   headerStats: {
     flexDirection: "row",
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
   toggleButton: {
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: theme.spacing.xs,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -152,6 +153,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: theme.colors.textMuted,
     fontWeight: "600",
+    fontFamily: theme.font.sans,
   },
   tree: {
     paddingVertical: theme.spacing.xs,
@@ -179,12 +181,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     color: theme.colors.textSecondary,
+    fontFamily: theme.font.sans,
   },
   fileName: {
     flex: 1,
     fontSize: 12,
     color: theme.colors.text,
-    fontFamily: "monospace",
+    fontFamily: theme.font.mono,
   },
   statRow: {
     flexDirection: "row",
@@ -194,7 +197,7 @@ const styles = StyleSheet.create({
   statAdditions: {
     fontSize: 10,
     color: theme.colors.success,
-    fontFamily: "monospace",
+    fontFamily: theme.font.mono,
   },
   statSeparator: {
     fontSize: 10,
@@ -204,6 +207,6 @@ const styles = StyleSheet.create({
   statDeletions: {
     fontSize: 10,
     color: theme.colors.error,
-    fontFamily: "monospace",
+    fontFamily: theme.font.mono,
   },
 });

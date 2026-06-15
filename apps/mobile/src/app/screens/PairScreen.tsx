@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -29,6 +29,15 @@ type Props = NativeStackScreenProps<RootStackParamList, "Pair">;
 type PairMode = "scan" | "paste" | "manual";
 type PairStatus = "idle" | "exchanging" | "success" | "error";
 
+function friendlyError(raw: string): string {
+  if (/transport|network|fetch|ECONNREFUSED|ENOTFOUND|timeout/i.test(raw)) {
+    const hostMatch = raw.match(/https?:\/\/[^/\s]+/);
+    const host = hostMatch ? hostMatch[0] : "the server";
+    return `Couldn't reach ${host}. Make sure your phone and computer are on the same Tailscale network (or Wi-Fi).`;
+  }
+  return raw;
+}
+
 export function PairScreen({ navigation }: Props) {
   const [mode, setMode] = useState<PairMode>("scan");
   const [permission, requestPermission] = useCameraPermissions();
@@ -38,12 +47,14 @@ export function PairScreen({ navigation }: Props) {
   const [status, setStatus] = useState<PairStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [successLabel, setSuccessLabel] = useState("");
+  const scanLockRef = useRef(false);
   const service = useConnectionService();
 
   const handleExchange = useCallback(async (outcome: PairingParseOutcome) => {
     if (!outcome.ok) {
       setStatus("error");
       setErrorMessage(outcome.message);
+      scanLockRef.current = false;
       return;
     }
 
@@ -72,18 +83,33 @@ export function PairScreen({ navigation }: Props) {
       setStatus("success");
       setSuccessLabel(result.environmentLabel);
     } catch (cause) {
+      const raw = cause instanceof Error ? cause.message : "Pairing exchange failed.";
       setStatus("error");
-      setErrorMessage(cause instanceof Error ? cause.message : "Pairing exchange failed.");
+      setErrorMessage(friendlyError(raw));
+      scanLockRef.current = false;
     }
   }, []);
 
   const handleQrScanned = useCallback(
     (data: string) => {
+      if (scanLockRef.current) return;
       if (status === "exchanging" || status === "success") return;
+      scanLockRef.current = true;
       void handleExchange(parsePairingUrl(data));
     },
     [handleExchange, status],
   );
+
+  const handleRetry = useCallback(() => {
+    setStatus("idle");
+    setErrorMessage("");
+    scanLockRef.current = false;
+  }, []);
+
+  const handleModeChange = useCallback((newMode: PairMode) => {
+    setMode(newMode);
+    scanLockRef.current = false;
+  }, []);
 
   const handlePasteSubmit = useCallback(() => {
     void handleExchange(parsePairingUrl(pasteUrl));
@@ -96,11 +122,13 @@ export function PairScreen({ navigation }: Props) {
   if (status === "success") {
     return (
       <View style={styles.container}>
-        <Text style={styles.successTitle}>Environment Paired</Text>
-        <Text style={styles.successLabel}>{successLabel}</Text>
-        <Pressable style={styles.button} onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>Done</Text>
-        </Pressable>
+        <View style={styles.successContainer}>
+          <Text style={styles.successTitle}>Environment Paired</Text>
+          <Text style={styles.successLabel}>{successLabel}</Text>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.primaryButtonText}>Done</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -110,31 +138,18 @@ export function PairScreen({ navigation }: Props) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.modeBar}>
-        <Pressable
-          style={[styles.modeTab, mode === "scan" && styles.modeTabActive]}
-          onPress={() => setMode("scan")}
-        >
-          <Text style={[styles.modeTabText, mode === "scan" && styles.modeTabTextActive]}>
-            Scan
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.modeTab, mode === "paste" && styles.modeTabActive]}
-          onPress={() => setMode("paste")}
-        >
-          <Text style={[styles.modeTabText, mode === "paste" && styles.modeTabTextActive]}>
-            Paste URL
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.modeTab, mode === "manual" && styles.modeTabActive]}
-          onPress={() => setMode("manual")}
-        >
-          <Text style={[styles.modeTabText, mode === "manual" && styles.modeTabTextActive]}>
-            Manual
-          </Text>
-        </Pressable>
+      <View style={styles.segmentedControl}>
+        {(["scan", "paste", "manual"] as const).map((tab) => (
+          <Pressable
+            key={tab}
+            style={[styles.segmentTab, mode === tab && styles.segmentTabActive]}
+            onPress={() => handleModeChange(tab)}
+          >
+            <Text style={[styles.segmentTabText, mode === tab && styles.segmentTabTextActive]}>
+              {tab === "scan" ? "Scan" : tab === "paste" ? "Paste URL" : "Manual"}
+            </Text>
+          </Pressable>
+        ))}
       </View>
 
       {mode === "scan" && (
@@ -144,17 +159,19 @@ export function PairScreen({ navigation }: Props) {
               <Text style={styles.permissionText}>
                 Camera access is needed to scan pairing QR codes.
               </Text>
-              <Pressable style={styles.button} onPress={requestPermission}>
-                <Text style={styles.buttonText}>Grant Camera Access</Text>
+              <Pressable style={styles.primaryButton} onPress={requestPermission}>
+                <Text style={styles.primaryButtonText}>Grant Camera Access</Text>
               </Pressable>
             </View>
           ) : (
-            <CameraView
-              style={styles.camera}
-              facing="back"
-              onBarcodeScanned={(result) => handleQrScanned(result.data)}
-              barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-            />
+            <View style={styles.cameraFrame}>
+              <CameraView
+                style={styles.camera}
+                facing="back"
+                onBarcodeScanned={(result) => handleQrScanned(result.data)}
+                barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+              />
+            </View>
           )}
           <Text style={styles.scanHint}>Point your camera at a Viper Code pairing QR code.</Text>
         </View>
@@ -173,8 +190,8 @@ export function PairScreen({ navigation }: Props) {
             autoCorrect={false}
             keyboardType="url"
           />
-          <Pressable style={styles.button} onPress={handlePasteSubmit}>
-            <Text style={styles.buttonText}>Connect</Text>
+          <Pressable style={styles.primaryButton} onPress={handlePasteSubmit}>
+            <Text style={styles.primaryButtonText}>Connect</Text>
           </Pressable>
         </View>
       )}
@@ -202,8 +219,8 @@ export function PairScreen({ navigation }: Props) {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <Pressable style={styles.button} onPress={handleManualSubmit}>
-            <Text style={styles.buttonText}>Connect</Text>
+          <Pressable style={styles.primaryButton} onPress={handleManualSubmit}>
+            <Text style={styles.primaryButtonText}>Connect</Text>
           </Pressable>
         </View>
       )}
@@ -216,8 +233,11 @@ export function PairScreen({ navigation }: Props) {
       )}
 
       {status === "error" && (
-        <View style={styles.statusContainer}>
+        <View style={styles.errorBanner}>
           <Text style={styles.errorText}>{errorMessage}</Text>
+          <Pressable style={styles.retryButton} onPress={handleRetry}>
+            <Text style={styles.retryButtonText}>Try again</Text>
+          </Pressable>
         </View>
       )}
     </KeyboardAvoidingView>
@@ -229,30 +249,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  modeBar: {
+  segmentedControl: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    margin: theme.spacing.md,
+    borderRadius: theme.radius.pill,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  modeTab: {
+  segmentTab: {
     flex: 1,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     alignItems: "center",
+    borderRadius: theme.radius.pill,
   },
-  modeTabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colors.primary,
+  segmentTabActive: {
+    backgroundColor: theme.colors.primary,
   },
-  modeTabText: {
+  segmentTabText: {
     fontSize: 14,
+    fontWeight: "500",
     color: theme.colors.textSecondary,
+    fontFamily: theme.font.sans,
   },
-  modeTabTextActive: {
-    color: theme.colors.primary,
+  segmentTabTextActive: {
+    color: theme.colors.primaryForeground,
     fontWeight: "600",
   },
   scanContainer: {
     flex: 1,
+  },
+  cameraFrame: {
+    flex: 1,
+    margin: theme.spacing.md,
+    borderRadius: theme.radius.card,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   camera: {
     flex: 1,
@@ -262,6 +296,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 13,
     padding: theme.spacing.md,
+    fontFamily: theme.font.sans,
   },
   permissionContainer: {
     flex: 1,
@@ -274,36 +309,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginBottom: theme.spacing.md,
+    fontFamily: theme.font.sans,
   },
   formContainer: {
     padding: theme.spacing.lg,
   },
   formLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     marginBottom: theme.spacing.xs,
     marginTop: theme.spacing.md,
+    fontFamily: theme.font.sans,
   },
   input: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceElevated,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 8,
+    borderRadius: theme.radius.input,
     padding: theme.spacing.md,
     color: theme.colors.text,
     fontSize: 15,
+    fontFamily: theme.font.sans,
   },
-  button: {
+  primaryButton: {
     backgroundColor: theme.colors.primary,
-    borderRadius: 8,
+    borderRadius: theme.radius.button,
     padding: theme.spacing.md,
     alignItems: "center",
     marginTop: theme.spacing.lg,
+    height: 48,
+    justifyContent: "center",
   },
-  buttonText: {
-    color: theme.colors.background,
+  primaryButtonText: {
+    color: theme.colors.primaryForeground,
     fontSize: 15,
     fontWeight: "600",
+    fontFamily: theme.font.sans,
   },
   statusContainer: {
     padding: theme.spacing.lg,
@@ -313,18 +357,52 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 14,
     marginTop: theme.spacing.sm,
+    fontFamily: theme.font.sans,
+  },
+  errorBanner: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+    borderRadius: theme.radius.card,
+    margin: theme.spacing.md,
+    padding: theme.spacing.md,
   },
   errorText: {
     color: theme.colors.error,
     fontSize: 14,
     textAlign: "center",
+    fontFamily: theme.font.sans,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: theme.radius.button,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    alignItems: "center",
+    marginTop: theme.spacing.md,
+    alignSelf: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  retryButtonText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: theme.font.sans,
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: theme.spacing.lg,
   },
   successTitle: {
-    fontSize: 22,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
     color: theme.colors.success,
     textAlign: "center",
-    marginTop: theme.spacing.xl,
+    fontFamily: theme.font.sans,
   },
   successLabel: {
     fontSize: 16,
@@ -332,5 +410,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
+    fontFamily: theme.font.sans,
   },
 });
