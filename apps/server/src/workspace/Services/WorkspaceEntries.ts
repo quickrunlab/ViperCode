@@ -13,6 +13,8 @@ import type * as Effect from "effect/Effect";
 import type {
   FilesystemBrowseInput,
   FilesystemBrowseResult,
+  ProjectListEntriesInput,
+  ProjectListEntriesResult,
   ProjectSearchEntriesInput,
   ProjectSearchEntriesResult,
 } from "@vipercode/contracts";
@@ -57,6 +59,13 @@ export interface WorkspaceEntriesShape {
   readonly search: (
     input: ProjectSearchEntriesInput,
   ) => Effect.Effect<ProjectSearchEntriesResult, WorkspaceEntriesError>;
+
+  /**
+   * List all indexed workspace entries for the given workspace root.
+   */
+  readonly list: (
+    input: ProjectListEntriesInput,
+  ) => Effect.Effect<ProjectListEntriesResult, WorkspaceEntriesError>;
 
   /**
    * Drop any cached workspace entries for the given workspace root.

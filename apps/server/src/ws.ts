@@ -17,6 +17,7 @@ import {
   AuthRelayWriteScope,
   AuthTerminalOperateScope,
   AuthAccessReadScope,
+  AssetAccessError,
   AuthAccessStreamError,
   type AuthAccessStreamEvent,
   type AuthEnvironmentScope,
@@ -33,11 +34,15 @@ import {
   OrchestrationGetSnapshotError,
   OrchestrationGetTurnDiffError,
   ORCHESTRATION_WS_METHODS,
+  ProjectListEntriesError,
+  ProjectReadFileError,
   ProjectSearchEntriesError,
   ProjectWriteFileError,
   RelayClientInstallFailedError,
   type RelayClientInstallProgressEvent,
   OrchestrationReplayEventsError,
+  PreviewAutomationUnavailableError,
+  PreviewInvalidUrlError,
   FilesystemBrowseError,
   EnvironmentAuthorizationError,
   ThreadId,
@@ -152,10 +157,25 @@ const RPC_REQUIRED_SCOPE = new Map<string, AuthEnvironmentScope>([
   [WS_METHODS.sourceControlLookupRepository, AuthOrchestrationReadScope],
   [WS_METHODS.sourceControlCloneRepository, AuthOrchestrationOperateScope],
   [WS_METHODS.sourceControlPublishRepository, AuthOrchestrationOperateScope],
+  [WS_METHODS.projectsListEntries, AuthOrchestrationReadScope],
+  [WS_METHODS.projectsReadFile, AuthOrchestrationReadScope],
   [WS_METHODS.projectsSearchEntries, AuthOrchestrationReadScope],
   [WS_METHODS.projectsWriteFile, AuthOrchestrationOperateScope],
   [WS_METHODS.shellOpenInEditor, AuthOrchestrationOperateScope],
   [WS_METHODS.filesystemBrowse, AuthOrchestrationReadScope],
+  [WS_METHODS.assetsCreateUrl, AuthOrchestrationReadScope],
+  [WS_METHODS.previewOpen, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewNavigate, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewRefresh, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewClose, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewList, AuthOrchestrationReadScope],
+  [WS_METHODS.previewReportStatus, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewAutomationConnect, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewAutomationRespond, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewAutomationReportOwner, AuthOrchestrationOperateScope],
+  [WS_METHODS.previewAutomationClearOwner, AuthOrchestrationOperateScope],
+  [WS_METHODS.subscribePreviewEvents, AuthOrchestrationReadScope],
+  [WS_METHODS.subscribeDiscoveredLocalServers, AuthOrchestrationReadScope],
   [WS_METHODS.subscribeVcsStatus, AuthOrchestrationReadScope],
   [WS_METHODS.vcsRefreshStatus, AuthOrchestrationReadScope],
   [WS_METHODS.vcsPull, AuthOrchestrationOperateScope],
@@ -757,6 +777,15 @@ const makeWsRpcLayer = (currentSession: AuthenticatedSession) =>
           .refreshStatus(cwd)
           .pipe(Effect.ignoreCause({ log: true }), Effect.forkDetach, Effect.asVoid);
 
+      const previewUnavailable = (operation: string) =>
+        new PreviewInvalidUrlError({
+          rawUrl: operation,
+          detail: "Viper server preview support is not implemented yet.",
+        });
+      const previewAutomationUnavailable = new PreviewAutomationUnavailableError({
+        message: "Viper server preview automation support is not implemented yet.",
+      });
+
       return WsRpcGroup.of({
         [ORCHESTRATION_WS_METHODS.dispatchCommand]: (command) =>
           observeRpcEffect(
@@ -1134,6 +1163,36 @@ const makeWsRpcLayer = (currentSession: AuthenticatedSession) =>
               "rpc.aggregate": "source-control",
             },
           ),
+        [WS_METHODS.projectsListEntries]: (input) =>
+          observeRpcEffect(
+            WS_METHODS.projectsListEntries,
+            workspaceEntries.list(input).pipe(
+              Effect.mapError(
+                (cause) =>
+                  new ProjectListEntriesError({
+                    message: `Failed to list workspace entries: ${cause.detail}`,
+                    cause,
+                  }),
+              ),
+            ),
+            { "rpc.aggregate": "workspace" },
+          ),
+        [WS_METHODS.projectsReadFile]: (input) =>
+          observeRpcEffect(
+            WS_METHODS.projectsReadFile,
+            workspaceFileSystem.readFile(input).pipe(
+              Effect.mapError((cause) => {
+                const message = isWorkspacePathOutsideRootError(cause)
+                  ? "Workspace file path must stay within the project root."
+                  : "Failed to read workspace file";
+                return new ProjectReadFileError({
+                  message,
+                  cause,
+                });
+              }),
+            ),
+            { "rpc.aggregate": "workspace" },
+          ),
         [WS_METHODS.projectsSearchEntries]: (input) =>
           observeRpcEffect(
             WS_METHODS.projectsSearchEntries,
@@ -1181,6 +1240,16 @@ const makeWsRpcLayer = (currentSession: AuthenticatedSession) =>
               ),
             ),
             { "rpc.aggregate": "workspace" },
+          ),
+        [WS_METHODS.assetsCreateUrl]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.assetsCreateUrl,
+            Effect.fail(
+              new AssetAccessError({
+                message: "Viper server asset URL support is not implemented yet.",
+              }),
+            ),
+            { "rpc.aggregate": "assets" },
           ),
         [WS_METHODS.subscribeVcsStatus]: (input) =>
           observeRpcStream(
@@ -1348,6 +1417,72 @@ const makeWsRpcLayer = (currentSession: AuthenticatedSession) =>
             ),
             { "rpc.aggregate": "terminal" },
           ),
+        [WS_METHODS.previewOpen]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewOpen,
+            Effect.fail(previewUnavailable(WS_METHODS.previewOpen)),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewNavigate]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewNavigate,
+            Effect.fail(previewUnavailable(WS_METHODS.previewNavigate)),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewRefresh]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewRefresh,
+            Effect.fail(previewUnavailable(WS_METHODS.previewRefresh)),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewClose]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewClose,
+            Effect.fail(previewUnavailable(WS_METHODS.previewClose)),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewList]: (_input) =>
+          observeRpcEffect(WS_METHODS.previewList, Effect.succeed({ sessions: [] }), {
+            "rpc.aggregate": "preview",
+          }),
+        [WS_METHODS.previewReportStatus]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewReportStatus,
+            Effect.fail(previewUnavailable(WS_METHODS.previewReportStatus)),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewAutomationConnect]: (_input) =>
+          observeRpcStream(
+            WS_METHODS.previewAutomationConnect,
+            Stream.fail(previewAutomationUnavailable),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewAutomationRespond]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewAutomationRespond,
+            Effect.fail(previewAutomationUnavailable),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewAutomationReportOwner]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewAutomationReportOwner,
+            Effect.fail(previewAutomationUnavailable),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.previewAutomationClearOwner]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.previewAutomationClearOwner,
+            Effect.fail(previewAutomationUnavailable),
+            { "rpc.aggregate": "preview" },
+          ),
+        [WS_METHODS.subscribePreviewEvents]: (_input) =>
+          observeRpcStream(WS_METHODS.subscribePreviewEvents, Stream.empty, {
+            "rpc.aggregate": "preview",
+          }),
+        [WS_METHODS.subscribeDiscoveredLocalServers]: (_input) =>
+          observeRpcStream(WS_METHODS.subscribeDiscoveredLocalServers, Stream.empty, {
+            "rpc.aggregate": "preview",
+          }),
         [WS_METHODS.subscribeServerConfig]: (_input) =>
           observeRpcStreamEffect(
             WS_METHODS.subscribeServerConfig,

@@ -76,7 +76,7 @@ import { stackedThreadToast, toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
-import { useT3ConnectAuthPrompt } from "../clerk/useT3ConnectAuthPrompt";
+import { useViperConnectAuthPrompt } from "../clerk/useViperConnectAuthPrompt";
 import { Group, GroupSeparator } from "../ui/group";
 import { AnimatedHeight } from "../AnimatedHeight";
 import {
@@ -1656,7 +1656,7 @@ function ConfiguredCloudRemoteEnvironmentRows({
   readonly savedEnvironmentIds: ReadonlyArray<EnvironmentId>;
 }) {
   const { getToken, isSignedIn } = useAuth();
-  const { authPrompt, openAuthPrompt } = useT3ConnectAuthPrompt();
+  const { authPrompt, openAuthPrompt } = useViperConnectAuthPrompt();
   const environmentsState = useManagedRelayEnvironments();
   const [connectingEnvironmentId, setConnectingEnvironmentId] = useState<EnvironmentId | null>(
     null,

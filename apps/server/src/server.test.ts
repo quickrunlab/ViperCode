@@ -14,7 +14,7 @@ import {
   GitCommandError,
   KeybindingRule,
   MessageId,
-  ExternalLauncherError,
+  ExternalLauncherCommandNotFoundError,
   type OrchestrationThreadShell,
   TerminalNotRunningError,
   type OrchestrationCommand,
@@ -4697,8 +4697,9 @@ it.layer(NodeServices.layer)("server router seam", (it) => {
 
   it.effect("routes websocket rpc shell.openInEditor errors", () =>
     Effect.gen(function* () {
-      const externalLauncherError = new ExternalLauncherError({
-        message: "Editor command not found: vscode",
+      const externalLauncherError = new ExternalLauncherCommandNotFoundError({
+        editor: "vscode",
+        command: "vscode",
       });
       yield* buildAppUnderTest({
         layers: {

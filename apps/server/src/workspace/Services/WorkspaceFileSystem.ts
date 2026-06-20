@@ -10,7 +10,12 @@ import * as Schema from "effect/Schema";
 import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 
-import type { ProjectWriteFileInput, ProjectWriteFileResult } from "@vipercode/contracts";
+import type {
+  ProjectReadFileInput,
+  ProjectReadFileResult,
+  ProjectWriteFileInput,
+  ProjectWriteFileResult,
+} from "@vipercode/contracts";
 import { WorkspacePathOutsideRootError } from "./WorkspacePaths.ts";
 
 export class WorkspaceFileSystemError extends Schema.TaggedErrorClass<WorkspaceFileSystemError>()(
@@ -28,6 +33,18 @@ export class WorkspaceFileSystemError extends Schema.TaggedErrorClass<WorkspaceF
  * WorkspaceFileSystemShape - Service API for workspace-relative file operations.
  */
 export interface WorkspaceFileSystemShape {
+  /**
+   * Read a UTF-8 text file relative to the workspace root.
+   *
+   * Rejects paths that escape the workspace root and binary files.
+   */
+  readonly readFile: (
+    input: ProjectReadFileInput,
+  ) => Effect.Effect<
+    ProjectReadFileResult,
+    WorkspaceFileSystemError | WorkspacePathOutsideRootError
+  >;
+
   /**
    * Write a file relative to the workspace root.
    *

@@ -8,7 +8,12 @@
  */
 import {
   EDITORS,
+  ExternalLauncherBrowserSpawnError,
+  ExternalLauncherCommandNotFoundError,
+  ExternalLauncherEditorSpawnError,
   ExternalLauncherError,
+  ExternalLauncherUnknownEditorError,
+  ExternalLauncherUnsupportedEditorError,
   type EditorId,
   type LaunchEditorInput,
 } from "@vipercode/contracts";
@@ -276,7 +281,7 @@ export const resolveEditorLaunch = Effect.fn("resolveEditorLaunch")(function* (
   });
   const editorDef = EDITORS.find((editor) => editor.id === input.editor);
   if (!editorDef) {
-    return yield* new ExternalLauncherError({ message: `Unknown editor: ${input.editor}` });
+    return yield* new ExternalLauncherUnknownEditorError({ editor: input.editor });
   }
 
   if (editorDef.commands) {
@@ -291,7 +296,7 @@ export const resolveEditorLaunch = Effect.fn("resolveEditorLaunch")(function* (
   }
 
   if (editorDef.id !== "file-manager") {
-    return yield* new ExternalLauncherError({ message: `Unsupported editor: ${input.editor}` });
+    return yield* new ExternalLauncherUnsupportedEditorError({ editor: input.editor });
   }
 
   return { command: fileManagerCommandForPlatform(platform), args: [input.cwd] };
@@ -299,7 +304,7 @@ export const resolveEditorLaunch = Effect.fn("resolveEditorLaunch")(function* (
 
 const launchAndUnref = Effect.fn("externalLauncher.launchAndUnref")(function* (
   launch: ProcessLaunch,
-  errorMessage: string,
+  onError: (cause: unknown) => ExternalLauncherError,
 ): Effect.fn.Return<void, ExternalLauncherError, ChildProcessSpawner.ChildProcessSpawner> {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const command = ChildProcess.make(launch.command, launch.args, launch.options);
@@ -308,30 +313,44 @@ const launchAndUnref = Effect.fn("externalLauncher.launchAndUnref")(function* (
     Effect.flatMap((handle) => handle.unref),
     Effect.asVoid,
     Effect.scoped,
-    Effect.mapError((cause) => new ExternalLauncherError({ message: errorMessage, cause })),
+    Effect.mapError(onError),
   );
 });
 
 export const launchBrowser = Effect.fn("externalLauncher.launchBrowser")(function* (
   target: string,
 ): Effect.fn.Return<void, ExternalLauncherError, ChildProcessSpawner.ChildProcessSpawner> {
-  return yield* launchAndUnref(resolveBrowserLaunch(target), "Browser auto-open failed");
+  const launch = resolveBrowserLaunch(target);
+  return yield* launchAndUnref(
+    launch,
+    (cause) =>
+      new ExternalLauncherBrowserSpawnError({
+        command: launch.command,
+        args: [...launch.args],
+        target,
+        cause,
+      }),
+  );
 });
 
 export const launchEditorProcess = Effect.fn("externalLauncher.launchEditorProcess")(function* (
   launch: EditorLaunch,
+  editor: EditorId,
+  target: string,
 ): Effect.fn.Return<void, ExternalLauncherError, ChildProcessSpawner.ChildProcessSpawner> {
   if (!isCommandAvailable(launch.command)) {
-    return yield* new ExternalLauncherError({
-      message: `Editor command not found: ${launch.command}`,
+    return yield* new ExternalLauncherCommandNotFoundError({
+      editor,
+      command: launch.command,
     });
   }
 
   const isWin32 = process.platform === "win32";
+  const args = isWin32 ? launch.args.map((arg) => `"${arg}"`) : [...launch.args];
   yield* launchAndUnref(
     {
       command: launch.command,
-      args: isWin32 ? launch.args.map((arg) => `"${arg}"`) : [...launch.args],
+      args,
       options: {
         detached: true,
         shell: isWin32,
@@ -340,7 +359,14 @@ export const launchEditorProcess = Effect.fn("externalLauncher.launchEditorProce
         stderr: "ignore",
       },
     },
-    "failed to spawn detached process",
+    (cause) =>
+      new ExternalLauncherEditorSpawnError({
+        command: launch.command,
+        args,
+        editor,
+        target,
+        cause,
+      }),
   );
 });
 
@@ -354,7 +380,7 @@ const make = Effect.gen(function* () {
       ),
     launchEditor: (input) =>
       Effect.flatMap(resolveEditorLaunch(input), (launch) =>
-        launchEditorProcess(launch).pipe(
+        launchEditorProcess(launch, input.editor, input.cwd).pipe(
           Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
         ),
       ),

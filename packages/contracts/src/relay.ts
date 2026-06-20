@@ -1,5 +1,5 @@
-import * as Schema from "effect/Schema";
 import * as Context from "effect/Context";
+import * as Schema from "effect/Schema";
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
@@ -250,7 +250,7 @@ export const RelayEnvironmentLinkRequest = Schema.Struct({
   notificationsEnabled: Schema.Boolean,
   liveActivitiesEnabled: Schema.Boolean,
   managedTunnelsEnabled: Schema.Boolean,
-}).annotate({ description: "Links an authenticated cloud user to a Viper environment." });
+}).annotate({ description: "Links an authenticated cloud user to a T3 environment." });
 export type RelayEnvironmentLinkRequest = typeof RelayEnvironmentLinkRequest.Type;
 
 export const RelayEnvironmentLinkResponse = Schema.Struct({
@@ -512,26 +512,22 @@ const RelayAgentActivityPublishErrors = [
   RelayInternalError,
 ] as const;
 
-export interface RelayClientPrincipalShape {
-  readonly userId: string;
-  readonly token: string;
-  readonly proofKeyThumbprint?: string;
-  readonly dpopScopes?: ReadonlyArray<RelayDpopAccessTokenScope>;
-}
-
 export class RelayClientPrincipal extends Context.Service<
   RelayClientPrincipal,
-  RelayClientPrincipalShape
+  {
+    readonly userId: string;
+    readonly token: string;
+    readonly proofKeyThumbprint?: string;
+    readonly dpopScopes?: ReadonlyArray<RelayDpopAccessTokenScope>;
+  }
 >()("@vipercode/contracts/relay/RelayClientPrincipal") {}
-
-export interface RelayEnvironmentPrincipalShape {
-  readonly environmentId: string;
-  readonly environmentPublicKey: string;
-}
 
 export class RelayEnvironmentPrincipal extends Context.Service<
   RelayEnvironmentPrincipal,
-  RelayEnvironmentPrincipalShape
+  {
+    readonly environmentId: string;
+    readonly environmentPublicKey: string;
+  }
 >()("@vipercode/contracts/relay/RelayEnvironmentPrincipal") {}
 
 const RelayClientBearerAuthorization = HttpApiSecurity.http({ scheme: "bearer" }).pipe(
@@ -711,6 +707,7 @@ export const RelayEnvironmentStatusResponse = Schema.Struct({
   checkedAt: TrimmedNonEmptyString,
   descriptor: Schema.optional(ExecutionEnvironmentDescriptor),
   error: Schema.optional(TrimmedNonEmptyString),
+  traceId: Schema.optional(TrimmedNonEmptyString),
 });
 export type RelayEnvironmentStatusResponse = typeof RelayEnvironmentStatusResponse.Type;
 
@@ -1010,6 +1007,6 @@ export const RelayApi = HttpApi.make("RelayApi")
   .annotate(OpenApi.Version, "1.0.0")
   .annotate(
     OpenApi.Description,
-    "Control-plane API for linking Viper environments, connecting authorized clients, and publishing agent activity.",
+    "Control-plane API for linking T3 environments, connecting authorized clients, and publishing agent activity.",
   );
 export type RelayApi = typeof RelayApi;

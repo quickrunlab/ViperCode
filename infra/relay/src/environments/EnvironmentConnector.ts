@@ -592,7 +592,7 @@ const make = Effect.gen(function* () {
       );
       const environmentClient = yield* makeEnvironmentClient(endpoint.httpBaseUrl);
       const decoded = yield* environmentClient.connect
-        .t3MintCredential({ payload: { proof } })
+        .viperMintCredential({ payload: { proof } })
         .pipe(
           withoutRedirects,
           Effect.mapError(

@@ -493,7 +493,7 @@ export class EnvironmentConnectHttpApi extends HttpApiGroup.make("connect")
     }),
   )
   .add(
-    HttpApiEndpoint.post("t3MintCredential", "/api/viper-connect/mint-credential", {
+    HttpApiEndpoint.post("viperMintCredential", "/api/viper-connect/mint-credential", {
       payload: RelayCloudMintCredentialRequest,
       success: RelayEnvironmentMintResponse,
       error: EnvironmentHttpCloudErrors,

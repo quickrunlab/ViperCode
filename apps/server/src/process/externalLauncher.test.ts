@@ -604,10 +604,14 @@ it.layer(NodeServices.layer)("launchEditorProcess", (it) => {
           }),
       });
 
-      const result = yield* launchEditorProcess({
-        command: process.execPath,
-        args: expectedArgs,
-      }).pipe(Effect.provide(spawnerLayer), Effect.result);
+      const result = yield* launchEditorProcess(
+        {
+          command: process.execPath,
+          args: expectedArgs,
+        },
+        "vscode",
+        "/tmp/workspace",
+      ).pipe(Effect.provide(spawnerLayer), Effect.result);
 
       assertSuccess(result, undefined);
       assert.ok(spawnedCommand);
@@ -630,12 +634,16 @@ it.layer(NodeServices.layer)("launchEditorProcess", (it) => {
   it.effect("rejects when command does not exist", () =>
     Effect.gen(function* () {
       const spawnerLayer = Layer.mock(ChildProcessSpawner.ChildProcessSpawner, {});
-      const result = yield* launchEditorProcess({
-        command: `vipercode-no-such-command-${yield* Crypto.Crypto.pipe(
-          Effect.flatMap((crypto) => crypto.randomUUIDv4),
-        )}`,
-        args: [],
-      }).pipe(Effect.provide(spawnerLayer), Effect.result);
+      const result = yield* launchEditorProcess(
+        {
+          command: `vipercode-no-such-command-${yield* Crypto.Crypto.pipe(
+            Effect.flatMap((crypto) => crypto.randomUUIDv4),
+          )}`,
+          args: [],
+        },
+        "vscode",
+        "/tmp/workspace",
+      ).pipe(Effect.provide(spawnerLayer), Effect.result);
       assert.equal(result._tag, "Failure");
     }),
   );
