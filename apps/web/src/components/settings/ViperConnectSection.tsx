@@ -9,7 +9,7 @@ import { useAuth } from "@clerk/react";
 import { memo, useState } from "react";
 
 import { hasCloudPublicConfig, resolveRelayClerkTokenOptions } from "~/cloud/publicConfig";
-import { useT3ConnectAuthPrompt } from "../clerk/useT3ConnectAuthPrompt";
+import { useViperConnectAuthPrompt } from "../clerk/useViperConnectAuthPrompt";
 import { refreshManagedRelayEnvironments } from "~/cloud/managedRelayState";
 import { usePrimaryCloudLinkState } from "~/cloud/primaryCloudLinkState";
 import {
@@ -66,7 +66,7 @@ export const ViperConnectSection = memo(function ViperConnectSection({
 
 function ViperConnectSectionInner({ canManageRelay }: ViperConnectSectionProps) {
   const { getToken, isSignedIn } = useAuth();
-  const { authPrompt, openAuthPrompt } = useT3ConnectAuthPrompt();
+  const { authPrompt, openAuthPrompt } = useViperConnectAuthPrompt();
   const primaryCloudLinkState = usePrimaryCloudLinkState();
   const [operationError, setOperationError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);

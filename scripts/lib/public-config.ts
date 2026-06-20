@@ -96,7 +96,13 @@ export function resolvePublicConfig(...sources: readonly Environment[]): ViperCo
       "EXPO_PUBLIC_CLERK_JWT_TEMPLATE",
     ),
     clerkCliOAuthClientId: firstNonEmpty(sources, "VIPERCODE_CLERK_CLI_OAUTH_CLIENT_ID"),
-    relayUrl: firstNonEmpty(sources, "VIPERCODE_RELAY_URL", "VITE_VIPERCODE_RELAY_URL"),
+    relayUrl: firstNonEmpty(
+      sources,
+      "VIPERCODE_RELAY_URL",
+      "VITE_VIPERCODE_RELAY_URL",
+      "EXPO_PUBLIC_VIPERCODE_RELAY_URL",
+      "EXPO_PUBLIC_RELAY_URL",
+    ),
     mobileOtlpTracesUrl: firstNonEmpty(
       sources,
       "VIPERCODE_MOBILE_OTLP_TRACES_URL",
