@@ -81,13 +81,21 @@ export function getComposerPathSearchTargetKey(target: ComposerPathSearchTarget)
   return `${target.environmentId}:${target.cwd}:${query}`;
 }
 
+function parentPathForEntry(path: string): string | undefined {
+  const separatorIndex = path.lastIndexOf("/");
+  return separatorIndex > 0 ? path.slice(0, separatorIndex) : undefined;
+}
+
 function toSearchEntries(
   entries: ProjectSearchEntriesResult["entries"],
 ): ReadonlyArray<ComposerPathSearchEntry> {
   return entries.map((entry) => ({
     path: entry.path,
     kind: entry.kind === "directory" ? "directory" : "file",
-    ...(entry.parentPath !== undefined ? { parentPath: entry.parentPath } : {}),
+    ...(() => {
+      const parentPath = parentPathForEntry(entry.path);
+      return parentPath !== undefined ? { parentPath } : {};
+    })(),
   }));
 }
 

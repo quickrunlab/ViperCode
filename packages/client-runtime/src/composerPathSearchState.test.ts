@@ -54,8 +54,8 @@ it("stores path search results in atom state", async () => {
 
   assert.deepStrictEqual(manager.getSnapshot(TARGET), {
     entries: [
-      { path: "src/index.ts", kind: "file" },
-      { path: "src/components", kind: "directory" },
+      { path: "src/index.ts", kind: "file", parentPath: "src" },
+      { path: "src/components", kind: "directory", parentPath: "src" },
     ],
     isPending: false,
     error: null,
@@ -81,7 +81,7 @@ it("reuses fresh cached path search results", async () => {
 
   assert.strictEqual(searchEntries.mock.calls.length, 1);
   assert.deepStrictEqual(manager.getSnapshot(TARGET), {
-    entries: [{ path: "src/index.ts", kind: "file" }],
+    entries: [{ path: "src/index.ts", kind: "file", parentPath: "src" }],
     isPending: false,
     error: null,
   });
@@ -116,7 +116,7 @@ it("invalidates watched path searches and refreshes without clearing entries", a
   manager.invalidate();
 
   assert.deepStrictEqual(manager.getSnapshot(TARGET), {
-    entries: [{ path: "src/old.ts", kind: "file" }],
+    entries: [{ path: "src/old.ts", kind: "file", parentPath: "src" }],
     isPending: true,
     error: null,
   });
@@ -128,7 +128,7 @@ it("invalidates watched path searches and refreshes without clearing entries", a
   await flushAsyncWork();
 
   assert.deepStrictEqual(manager.getSnapshot(TARGET), {
-    entries: [{ path: "src/new.ts", kind: "file" }],
+    entries: [{ path: "src/new.ts", kind: "file", parentPath: "src" }],
     isPending: false,
     error: null,
   });
