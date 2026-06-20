@@ -45,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: validate
     env:
+      APP_VARIANT: preview
       # Inject Viper public config so Viper Connect is visible in preview builds.
       # Configure these as repository secrets; absent config hides Connect.
       EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY }}

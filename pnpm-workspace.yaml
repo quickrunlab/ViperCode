@@ -74,6 +74,7 @@ overrides:
   "@effect/vitest>vitest": "-"
   "@expo/metro-config": 56.0.13
   "@pierre/diffs>@shikijs/transformers": ^4.2.0
+  react-native-nitro-markdown: "file:apps/mobile/deps/react-native-nitro-markdown-0.5.0.tgz"
   "@types/node": "catalog:"
   effect: "catalog:"
   vite: "catalog:"
