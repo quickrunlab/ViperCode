@@ -4,7 +4,7 @@
 
 - [ ] `vp check` passes with 0 errors
 - [ ] `vp run typecheck` passes across all packages
-- [ ] `vp run lint:mobile` passes (if configured)
+- [ ] `vp run lint:mobile` passes (native static check; install SwiftLint/ktlint/detekt for full coverage)
 - [ ] All mobile tests pass: `cd apps/mobile && vp test`
 - [ ] Auth smoke test: sign in, see environments, connect
 - [ ] Pairing smoke test: paste pairing URL, QR scan, exchange credential

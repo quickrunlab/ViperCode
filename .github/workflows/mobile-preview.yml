@@ -1,0 +1,93 @@
+name: Mobile Preview
+
+# Validates the Viper Mobile app and produces an installable Android preview
+# APK for internal testing. Runs on mobile-affecting pull requests and on
+# manual dispatch. iOS preview is intentionally deferred until the iOS native
+# path is stable (see .tmp rebase plan, Phase 9).
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "packages/client-runtime/**"
+      - "packages/contracts/**"
+      - "packages/shared/**"
+      - "scripts/mobile-native-static-check.ts"
+      - ".github/workflows/mobile-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install toolchain
+        run: npm install -g pnpm@10.24.0 vite-plus@0.1.24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck mobile
+        run: vp run --filter @vipercode/mobile typecheck
+
+      - name: Native static check
+        run: vp run lint:mobile
+
+  android-preview:
+    runs-on: ubuntu-latest
+    needs: validate
+    env:
+      # Inject Viper public config so Viper Connect is visible in preview builds.
+      # Configure these as repository secrets; absent config hides Connect.
+      EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE }}
+      EXPO_PUBLIC_VIPERCODE_RELAY_URL: ${{ secrets.EXPO_PUBLIC_VIPERCODE_RELAY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install toolchain
+        run: npm install -g pnpm@10.24.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prebuild Android native project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android
+
+      - name: Build preview APK
+        working-directory: apps/mobile/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+        env:
+          NODE_ENV: development
+          CI: "true"
+
+      - name: Stage preview APK
+        run: cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk ./viper-code-mobile-preview.apk
+
+      - name: Upload preview APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: viper-code-mobile-preview
+          path: viper-code-mobile-preview.apk
+          if-no-files-found: error
+          retention-days: 14
