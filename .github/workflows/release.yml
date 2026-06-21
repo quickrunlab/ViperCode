@@ -73,17 +73,15 @@ jobs:
       # non-executable or as a dangling symlink.
       - name: Ensure Hermes compiler is executable
         run: |
-          echo "--- hermesc candidates ---"
-          find node_modules -path "*sdks/hermesc*hermesc" 2>/dev/null | head -20
-          hermesc="$(find node_modules -path "*/sdks/hermesc/linux64-bin/hermesc" 2>/dev/null | head -1)"
-          echo "resolved: '$hermesc'"
-          if [ -n "$hermesc" ]; then
-            ls -la "$hermesc"; readlink -f "$hermesc" || true; file "$hermesc" || true
-            real="$(readlink -f "$hermesc")"; chmod +x "$hermesc" "$real" 2>/dev/null || true
-            ls -la "$real"
-          else
-            echo "hermesc NOT FOUND"
-          fi
+          echo "=== any hermesc by name ==="
+          find node_modules -iname "*hermesc*" 2>/dev/null | head -20
+          echo "=== react-native sdks dir ==="
+          rn="$(find node_modules/.pnpm -maxdepth 4 -type d -path "*react-native@*/node_modules/react-native" 2>/dev/null | head -1)"
+          echo "rn pkg: '$rn'"
+          ls -la "$rn/sdks" 2>/dev/null || echo "no sdks dir"
+          ls -laR "$rn/sdks/hermesc" 2>/dev/null | head -40 || echo "no hermesc dir"
+          echo "=== hermes-engine / hermesc deps ==="
+          find node_modules -maxdepth 3 -iname "*hermes*" -type d 2>/dev/null | head
 
       - name: Prebuild Android native project
         working-directory: apps/mobile
