@@ -68,6 +68,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # pnpm's content-addressable store can strip the executable bit from the
+      # prebuilt Hermes compiler; release builds invoke it (debug skips Hermes
+      # AOT), so restore +x before assembling.
+      - name: Ensure Hermes compiler is executable
+        run: find node_modules -type f -path "*/sdks/hermesc/*-bin/hermesc" -exec chmod +x {} +
+
       - name: Prebuild Android native project
         working-directory: apps/mobile
         run: npx expo prebuild --platform android
