@@ -71,17 +71,27 @@ jobs:
       # Diagnose + fix the prebuilt Hermes compiler that release builds invoke
       # (debug/preview skip Hermes AOT). pnpm's store layout can leave it
       # non-executable or as a dangling symlink.
-      - name: Ensure Hermes compiler is executable
+      # React Native 0.85 ships the Hermes compiler in the separate
+      # `hermes-compiler` package, but gradle's BundleHermesCTask invokes the
+      # hardcoded `react-native/sdks/hermesc/<os>-bin/hermesc`. Under pnpm that
+      # path is never populated (no postinstall; Expo resolves hermes-compiler
+      # directly), so release builds fail to start the (missing) binary.
+      # Materialize it from hermes-compiler and make it executable.
+      - name: Provision Hermes compiler for gradle
         run: |
-          echo "=== any hermesc by name ==="
-          find node_modules -iname "*hermesc*" 2>/dev/null | head -20
-          echo "=== react-native sdks dir ==="
-          rn="$(find node_modules/.pnpm -maxdepth 4 -type d -path "*react-native@*/node_modules/react-native" 2>/dev/null | head -1)"
-          echo "rn pkg: '$rn'"
-          ls -la "$rn/sdks" 2>/dev/null || echo "no sdks dir"
-          ls -laR "$rn/sdks/hermesc" 2>/dev/null | head -40 || echo "no hermesc dir"
-          echo "=== hermes-engine / hermesc deps ==="
-          find node_modules -maxdepth 3 -iname "*hermes*" -type d 2>/dev/null | head
+          set -eu
+          hc="$(find node_modules/.pnpm -type d -path '*hermes-compiler@*/node_modules/hermes-compiler/hermesc' 2>/dev/null | head -1)"
+          echo "hermes-compiler hermesc: '$hc'"
+          [ -n "$hc" ] || { echo "hermes-compiler not found"; exit 1; }
+          for rn in $(find node_modules/.pnpm -type d -path '*react-native@*/node_modules/react-native' 2>/dev/null); do
+            if [ -d "$rn/sdks" ] && [ ! -e "$rn/sdks/hermesc/linux64-bin/hermesc" ]; then
+              echo "populating $rn/sdks/hermesc"
+              mkdir -p "$rn/sdks/hermesc"
+              cp -R "$hc/." "$rn/sdks/hermesc/"
+            fi
+          done
+          find node_modules/.pnpm -path '*react-native@*/sdks/hermesc/*-bin/hermesc' -exec chmod +x {} +
+          find node_modules/.pnpm -path '*react-native@*/sdks/hermesc/linux64-bin/hermesc' -exec ls -la {} +
 
       - name: Prebuild Android native project
         working-directory: apps/mobile
@@ -91,13 +101,21 @@ jobs:
         working-directory: apps/mobile/android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --stacktrace
         env:
           NODE_ENV: production
           CI: "true"
 
       - name: Copy APK
         run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk ./viper-code-mobile.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: viper-code-mobile-release
+          path: viper-code-mobile.apk
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Publish GitHub release
         if: startsWith(github.ref, 'refs/tags/')
