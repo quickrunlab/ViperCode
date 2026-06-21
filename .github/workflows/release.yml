@@ -45,7 +45,7 @@ jobs:
           generate_release_notes: true
 
   android:
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY }}
       EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_JWT_TEMPLATE }}
