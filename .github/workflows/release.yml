@@ -101,7 +101,9 @@ jobs:
         working-directory: apps/mobile/android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease --stacktrace
+          # Skip release lint: lintVitalAnalyzeRelease OOMs (Metaspace) on the
+          # runner across modules and is not needed to produce the APK.
+          ./gradlew assembleRelease -x lintVitalRelease -x lintVitalAnalyzeRelease --stacktrace
         env:
           NODE_ENV: production
           CI: "true"
