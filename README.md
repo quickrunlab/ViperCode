@@ -6,7 +6,7 @@ This is still early WIP. Expect bugs.
 
 ## Installation
 
-Grab the latest build from [Releases](https://github.com/Viperisuseful/ViperCode/releases):
+Grab the latest build from [Releases](https://github.com/quickrunlab/ViperCode/releases):
 
 - Windows: `Viper-Code-x.y.z-x64.exe`
 - Android: `viper-code-mobile.apk`

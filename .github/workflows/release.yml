@@ -97,6 +97,16 @@ jobs:
         working-directory: apps/mobile
         run: npx expo prebuild --platform android
 
+      # Expo's default Gradle heap is too small for this RN app's R8/D8 dex
+      # merge (OutOfMemoryError: Java heap space). Raise it after prebuild
+      # regenerates gradle.properties.
+      - name: Raise Gradle heap for R8 dexing
+        working-directory: apps/mobile/android
+        run: |
+          sed -i '/^org\.gradle\.jvmargs=/d' gradle.properties
+          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8" >> gradle.properties
+          grep "^org.gradle.jvmargs=" gradle.properties
+
       - name: Build release APK
         working-directory: apps/mobile/android
         run: |
