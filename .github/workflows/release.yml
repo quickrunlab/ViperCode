@@ -5,12 +5,27 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      build_target:
+        description: "Which release artifact set to build"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - windows
+          - android
+      release_tag:
+        description: "Optional existing tag to attach dispatch-built artifacts to"
+        required: false
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   windows:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_target == 'all' || inputs.build_target == 'windows' }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +60,7 @@ jobs:
           generate_release_notes: true
 
   android:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_target == 'all' || inputs.build_target == 'android' }}
     runs-on: blacksmith-8vcpu-ubuntu-2404
     env:
       EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_VIPERCODE_CLERK_PUBLISHABLE_KEY }}
@@ -130,9 +146,10 @@ jobs:
           retention-days: 14
 
       - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
           files: |
             viper-code-mobile.apk
           generate_release_notes: true
