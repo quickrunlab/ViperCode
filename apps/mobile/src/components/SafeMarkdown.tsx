@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
-import { Linking } from "react-native";
-import MarkdownDisplay from "react-native-markdown-display";
+import { Linking, Text as RNText } from "react-native";
+import MarkdownDisplay, { type ASTNode, type RenderRules } from "react-native-markdown-display";
 // Type-only import: erased at build, so `react-native-nitro-markdown` is NEVER
 // evaluated on Android. Its module init creates Nitro HybridObjects
 // (MarkdownParser/MarkdownSession) that aren't registered on Android and throw
@@ -26,28 +26,51 @@ export function Markdown(props: MarkdownComponentProps) {
 
   const text = typeof props.children === "string" ? props.children : "";
 
+  // Custom `text` leaf rule. The library applies `styles.text` last (overriding
+  // inline marks), and named fonts on Android don't synthesize weight from
+  // fontWeight — so we pick the actual font file by ancestor: DMSans bold for
+  // **bold** and headings, DMSans regular otherwise. fontSize stays from
+  // inheritedStyles (heading sizes) with a 15px body default.
+  const rules: RenderRules = {
+    text: (node: ASTNode, _children, parent, _styles, inheritedStyles = {}) => {
+      const inBold = parent.some((p) => p.type === "strong" || p.type.startsWith("heading"));
+      const inEm = parent.some((p) => p.type === "em");
+      const inLink = parent.some((p) => p.type === "link");
+      return (
+        <RNText
+          key={node.key}
+          style={[
+            { fontSize: 15, lineHeight: 22 },
+            inheritedStyles,
+            {
+              fontFamily: inBold ? "DMSans_700Bold" : "DMSans_400Regular",
+              color: inBold ? strong : inLink ? link : body,
+              ...(inEm ? { fontStyle: "italic" as const } : null),
+            },
+          ]}
+        >
+          {node.content}
+        </RNText>
+      );
+    },
+  };
+
   return (
     <MarkdownDisplay
+      rules={rules}
       onLinkPress={(url) => {
         void Linking.openURL(url);
         return false;
       }}
       style={{
-        body: {
-          color: body,
-          fontSize: 15,
-          lineHeight: 22,
-          fontFamily: "DMSans_400Regular",
-        },
-        heading1: { color: strong, fontFamily: "DMSans_700Bold", fontSize: 22, lineHeight: 28 },
-        heading2: { color: strong, fontFamily: "DMSans_700Bold", fontSize: 20, lineHeight: 26 },
-        heading3: { color: strong, fontFamily: "DMSans_700Bold", fontSize: 17, lineHeight: 23 },
-        heading4: { color: strong, fontFamily: "DMSans_700Bold", fontSize: 15, lineHeight: 21 },
-        heading5: { color: strong, fontFamily: "DMSans_700Bold", fontSize: 14, lineHeight: 20 },
-        heading6: { color: strong, fontFamily: "DMSans_700Bold", fontSize: 13, lineHeight: 19 },
-        strong: { color: strong, fontFamily: "DMSans_700Bold" },
-        em: { fontStyle: "italic" },
-        link: { color: link, fontFamily: "DMSans_500Medium", textDecorationLine: "none" },
+        body: { color: body },
+        heading1: { color: strong, fontSize: 22, lineHeight: 28, marginVertical: 4 },
+        heading2: { color: strong, fontSize: 20, lineHeight: 26, marginVertical: 4 },
+        heading3: { color: strong, fontSize: 17, lineHeight: 23, marginVertical: 3 },
+        heading4: { color: strong, fontSize: 15, lineHeight: 21, marginVertical: 3 },
+        heading5: { color: strong, fontSize: 14, lineHeight: 20, marginVertical: 2 },
+        heading6: { color: strong, fontSize: 13, lineHeight: 19, marginVertical: 2 },
+        link: { color: link, textDecorationLine: "none" },
         blockquote: {
           backgroundColor: blockquoteBackground,
           borderLeftColor: blockquoteBorder,

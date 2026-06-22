@@ -1159,6 +1159,7 @@ export const ThreadFeed = memo(function ThreadFeed(props: ThreadFeedProps) {
 
   const iconSubtleColor = useThemeColor("--color-icon-subtle");
   const userBubbleColor = useThemeColor("--color-user-bubble");
+  const headerMaskColor = String(useThemeColor("--color-background"));
   const onMarkdownLinkPress = useCallback(
     (href: string) => {
       const presentation = resolveMarkdownLinkPresentation(href);
@@ -1507,6 +1508,21 @@ export const ThreadFeed = memo(function ThreadFeed(props: ThreadFeedProps) {
             paddingTop: 12,
             paddingBottom: bottomContentInset,
             paddingHorizontal: horizontalPadding,
+          }}
+        />
+        {/* Opaque strip behind the transparent native header. Rendered after the
+            list so it paints over messages that scroll up into the header area
+            (the native header title still composites above this), giving the
+            header a solid background instead of letting content bleed through. */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topContentInset,
+            backgroundColor: headerMaskColor,
           }}
         />
       </View>
