@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import {
-  Markdown,
   type CustomRenderers,
   type NodeStyleOverrides,
   type PartialMarkdownTheme,
 } from "react-native-nitro-markdown";
+import { Markdown } from "../../components/SafeMarkdown";
 import { Linking, ScrollView, Text as NativeText, View } from "react-native";
 
 import { MOBILE_TYPOGRAPHY } from "../../lib/typography";

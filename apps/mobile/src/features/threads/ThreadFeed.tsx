@@ -7,11 +7,11 @@ import { SymbolView } from "expo-symbols";
 import { useRouter } from "expo-router";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  Markdown,
   type CustomRenderers,
   type NodeStyleOverrides,
   type PartialMarkdownTheme,
 } from "react-native-nitro-markdown";
+import { Markdown } from "../../components/SafeMarkdown";
 import {
   ActivityIndicator,
   Image,
