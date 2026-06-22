@@ -110,6 +110,7 @@ export function ThreadRouteScreen() {
   const iconColor = String(useThemeColor("--color-icon"));
   const foregroundColor = String(useThemeColor("--color-foreground"));
   const secondaryFg = String(useThemeColor("--color-foreground-secondary"));
+  const headerBackgroundColor = String(useThemeColor("--color-background"));
 
   /* ─── Git status for native header trigger ───────────────────────── */
   const gitStatus = useEnvironmentQuery(
@@ -378,6 +379,11 @@ export function ThreadRouteScreen() {
           headerTransparent: true,
           headerStyle: { backgroundColor: "transparent" },
           headerShadowVisible: false,
+          // Opaque background behind the (transparent) header so messages
+          // scrolling up don't bleed through behind the title.
+          headerBackground: () => (
+            <View style={{ flex: 1, backgroundColor: headerBackgroundColor }} />
+          ),
           headerTintColor: iconColor,
           headerBackTitle: "",
           headerTitle: () => (
