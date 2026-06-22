@@ -23,8 +23,21 @@ const resolveShikiDependencyRoot = (packageName) => {
 };
 
 config.watchFolders = [...new Set([...(config.watchFolders ?? []), workspaceRoot])];
+
+// `expo-symbols` (Apple SF Symbols) is iOS-only and renders nothing on Android,
+// blanking every icon button. On Android, alias it to a Lucide-font shim that
+// renders the equivalent glyph. iOS/web keep the real native SF Symbols.
+const lucideSymbolShim = path.resolve(__dirname, "src/lib/symbols/lucideSymbolView.tsx");
+const defaultResolveRequest = config.resolver?.resolveRequest;
 config.resolver = {
   ...config.resolver,
+  resolveRequest: (context, moduleName, platform) => {
+    if (platform === "android" && moduleName === "expo-symbols") {
+      return { type: "sourceFile", filePath: lucideSymbolShim };
+    }
+    const resolve = defaultResolveRequest ?? context.resolveRequest;
+    return resolve(context, moduleName, platform);
+  },
   extraNodeModules: {
     // oxlint-disable-next-line unicorn/no-useless-fallback-in-spread
     ...(config.resolver?.extraNodeModules ?? {}),

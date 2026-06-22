@@ -1180,9 +1180,47 @@ export function deriveTimelineEntries(
     createdAt: entry.createdAt,
     entry,
   }));
-  return [...messageRows, ...proposedPlanRows, ...workRows].toSorted((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
-  );
+
+  // A reply's createdAt can land *before* the user message that prompted it
+  // (server/client clock skew), which a naive createdAt sort floats above the
+  // question. Anchor each turn's non-user message to the turn's user-message
+  // time so a reply can never sort above its own prompt.
+  const userCreatedAtByTurnId = new Map<string, string>();
+  for (const message of messages) {
+    if (message.role === "user" && message.turnId) {
+      const existing = userCreatedAtByTurnId.get(message.turnId);
+      if (existing === undefined || message.createdAt < existing) {
+        userCreatedAtByTurnId.set(message.turnId, message.createdAt);
+      }
+    }
+  }
+
+  const sortAnchor = (entry: TimelineEntry): string => {
+    if (entry.kind === "message" && entry.message.role !== "user" && entry.message.turnId) {
+      const anchor = userCreatedAtByTurnId.get(entry.message.turnId);
+      if (anchor !== undefined && anchor > entry.createdAt) {
+        return anchor;
+      }
+    }
+    return entry.createdAt;
+  };
+
+  // Tiebreak when anchors collide (e.g. a reply pinned to its prompt's time):
+  // the user prompt sorts first, then plans/work, then the assistant reply.
+  const withinTurnRank = (entry: TimelineEntry): number => {
+    if (entry.kind === "message") {
+      return entry.message.role === "user" ? 0 : 2;
+    }
+    return 1;
+  };
+
+  return [...messageRows, ...proposedPlanRows, ...workRows].toSorted((a, b) => {
+    const anchorComparison = sortAnchor(a).localeCompare(sortAnchor(b));
+    if (anchorComparison !== 0) {
+      return anchorComparison;
+    }
+    return withinTurnRank(a) - withinTurnRank(b);
+  });
 }
 
 export function deriveCompletionDividerBeforeEntryId(

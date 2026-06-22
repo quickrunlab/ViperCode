@@ -128,6 +128,9 @@ export default function RootLayout() {
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
+    // Lucide icon font — backs the Android SF-Symbol shim (see metro.config.js
+    // and lib/symbols/lucideSymbolView). Family name must stay "Lucide".
+    Lucide: require("../../assets/fonts/lucide.ttf"),
   });
   return (
     <RegistryContext.Provider value={appAtomRegistry}>

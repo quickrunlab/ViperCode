@@ -42,6 +42,10 @@ import {
 import { ThreadFeed } from "./ThreadFeed";
 import type { ThreadContentPresentation } from "./threadContentPresentation";
 
+// Extra top-inset (px) for the second line of the custom thread header (the
+// subtitle under the title), which useHeaderHeight() does not account for.
+const THREAD_HEADER_SUBTITLE_CUSHION = 18;
+
 export interface ThreadDetailScreenProps {
   readonly selectedThread: OrchestrationThreadShell;
   readonly contentPresentation: ThreadContentPresentation;
@@ -315,7 +319,11 @@ export const ThreadDetailScreen = memo(function ThreadDetailScreen(props: Thread
               contentPresentation={props.contentPresentation}
               agentLabel={agentLabel}
               latestTurn={props.selectedThread.latestTurn}
-              contentTopInset={headerHeight}
+              // useHeaderHeight() reports the standard single-line header height,
+              // but our custom header title is two lines (title + subtitle), so
+              // add a cushion for the extra line to stop the first message from
+              // rendering under the transparent header.
+              contentTopInset={headerHeight + THREAD_HEADER_SUBTITLE_CUSHION}
               contentBottomInset={feedBottomInset}
               layoutVariant={layoutVariant}
               composerExpanded={composerExpanded}
