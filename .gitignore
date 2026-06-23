@@ -34,3 +34,7 @@ node_modules/
 *.log
 .env*
 !.env.example
+
+# Python bytecode (Antigravity bridge)
+__pycache__/
+*.pyc
