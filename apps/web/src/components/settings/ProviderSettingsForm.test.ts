@@ -21,6 +21,30 @@ describe("ProviderSettingsForm helpers", () => {
     ]);
   });
 
+  it("derives Antigravity fields in order and flags the SDK badge", () => {
+    const antigravity = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("antigravity")];
+    expect(antigravity).toBeDefined();
+    expect(antigravity!.badgeLabel).toBe("SDK");
+
+    const fields = deriveProviderSettingsFields(antigravity!);
+    expect(fields.map((field) => field.key)).toEqual([
+      "binaryPath",
+      "pythonPath",
+      "authMode",
+      "gcpProject",
+      "gcpLocation",
+      "bridgePath",
+      "homePath",
+      "launchArgs",
+      "toolPermission",
+      "enableTerminalSandbox",
+      "allowNonWorkspaceAccess",
+    ]);
+
+    const sandbox = fields.find((field) => field.key === "enableTerminalSandbox");
+    expect(sandbox).toMatchObject({ control: "switch", label: "Terminal sandbox" });
+  });
+
   it("sources labels and descriptions from schema annotations", () => {
     const opencode = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("opencode")];
     expect(opencode).toBeDefined();

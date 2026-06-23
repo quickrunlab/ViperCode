@@ -350,6 +350,150 @@ export const OpenCodeSettings = makeProviderSettingsSchema(
 );
 export type OpenCodeSettings = typeof OpenCodeSettings.Type;
 
+// Google Antigravity. SDK-first provider: the `agy` CLI handles install, auth,
+// and version probing; the Python SDK (`google-antigravity`) drives streaming
+// sessions through a ViperCode-owned bridge process. `toolPermission` is kept
+// as a free-form string (validated in the UI) because the upstream enum is
+// young and may grow; the known values today are `request-review`,
+// `proceed-in-sandbox`, `always-proceed`, and `strict`.
+export const ANTIGRAVITY_DEFAULT_TOOL_PERMISSION = "request-review";
+export const ANTIGRAVITY_DEFAULT_AUTH_MODE = "google-oauth";
+export const ANTIGRAVITY_DEFAULT_GCP_LOCATION = "us-central1";
+
+export const AntigravitySettings = makeProviderSettingsSchema(
+  {
+    enabled: Schema.Boolean.pipe(
+      Schema.withDecodingDefault(Effect.succeed(true)),
+      Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
+    ),
+    binaryPath: makeBinaryPathSetting("agy").pipe(
+      Schema.annotateKey({
+        title: "CLI path",
+        description:
+          "Path to the Antigravity CLI (`agy`) used for install, auth, and version probes.",
+        providerSettingsForm: { placeholder: "agy", clearWhenEmpty: "omit" },
+      }),
+    ),
+    pythonPath: makeBinaryPathSetting("python").pipe(
+      Schema.annotateKey({
+        title: "Python path",
+        description: "Python executable used to launch the Antigravity SDK bridge.",
+        providerSettingsForm: { placeholder: "python", clearWhenEmpty: "omit" },
+      }),
+    ),
+    authMode: TrimmedString.pipe(
+      Schema.withDecodingDefault(Effect.succeed(ANTIGRAVITY_DEFAULT_AUTH_MODE)),
+      Schema.annotateKey({
+        title: "Auth mode",
+        description:
+          "Authentication mode. google-oauth uses Google OAuth/Application Default Credentials for Vertex/Gemini Enterprise; api-key uses GEMINI_API_KEY as an optional fallback.",
+        providerSettingsForm: {
+          placeholder: ANTIGRAVITY_DEFAULT_AUTH_MODE,
+          clearWhenEmpty: "omit",
+        },
+      }),
+    ),
+    gcpProject: TrimmedString.pipe(
+      Schema.withDecodingDefault(Effect.succeed("")),
+      Schema.annotateKey({
+        title: "GCP project",
+        description:
+          "Google Cloud project for OAuth/ADC-backed Antigravity SDK sessions. Required when Auth mode is google-oauth unless GOOGLE_CLOUD_PROJECT is set.",
+        providerSettingsForm: { placeholder: "my-gcp-project", clearWhenEmpty: "omit" },
+      }),
+    ),
+    gcpLocation: TrimmedString.pipe(
+      Schema.withDecodingDefault(Effect.succeed(ANTIGRAVITY_DEFAULT_GCP_LOCATION)),
+      Schema.annotateKey({
+        title: "GCP location",
+        description:
+          "Vertex/Gemini Enterprise location for OAuth/ADC-backed Antigravity SDK sessions.",
+        providerSettingsForm: {
+          placeholder: ANTIGRAVITY_DEFAULT_GCP_LOCATION,
+          clearWhenEmpty: "omit",
+        },
+      }),
+    ),
+    bridgePath: TrimmedString.pipe(
+      Schema.withDecodingDefault(Effect.succeed("")),
+      Schema.annotateKey({
+        title: "Bridge path",
+        description:
+          "Optional override path for the ViperCode Antigravity bridge module. Leave empty to use the bundled bridge.",
+        providerSettingsForm: {
+          placeholder: "vipercode_antigravity_bridge.py",
+          clearWhenEmpty: "omit",
+        },
+      }),
+    ),
+    homePath: TrimmedString.pipe(
+      Schema.withDecodingDefault(Effect.succeed("")),
+      Schema.annotateKey({
+        title: "Antigravity home path",
+        description:
+          "Optional home/config root for Antigravity/Gemini CLI state when an isolated instance is needed.",
+        providerSettingsForm: { placeholder: "~/.gemini", clearWhenEmpty: "omit" },
+      }),
+    ),
+    launchArgs: Schema.String.pipe(
+      Schema.withDecodingDefault(Effect.succeed("")),
+      Schema.annotateKey({
+        title: "Launch arguments",
+        description: "Additional bridge/CLI arguments passed on session start.",
+        providerSettingsForm: { placeholder: "e.g. --verbosity debug", clearWhenEmpty: "omit" },
+      }),
+    ),
+    toolPermission: TrimmedString.pipe(
+      Schema.withDecodingDefault(Effect.succeed(ANTIGRAVITY_DEFAULT_TOOL_PERMISSION)),
+      Schema.annotateKey({
+        title: "Tool permission",
+        description:
+          "Default tool-permission policy: request-review, proceed-in-sandbox, always-proceed, or strict. ViperCode approvals remain authoritative.",
+        providerSettingsForm: {
+          placeholder: ANTIGRAVITY_DEFAULT_TOOL_PERMISSION,
+          clearWhenEmpty: "omit",
+        },
+      }),
+    ),
+    enableTerminalSandbox: Schema.Boolean.pipe(
+      Schema.withDecodingDefault(Effect.succeed(true)),
+      Schema.annotateKey({
+        title: "Terminal sandbox",
+        description: "Run shell commands inside the Antigravity terminal sandbox where supported.",
+        providerSettingsForm: { control: "switch" },
+      }),
+    ),
+    allowNonWorkspaceAccess: Schema.Boolean.pipe(
+      Schema.withDecodingDefault(Effect.succeed(false)),
+      Schema.annotateKey({
+        title: "Allow non-workspace access",
+        description: "Permit Antigravity to access files outside the workspace. Off by default.",
+        providerSettingsForm: { control: "switch" },
+      }),
+    ),
+    customModels: Schema.Array(Schema.String).pipe(
+      Schema.withDecodingDefault(Effect.succeed([])),
+      Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
+    ),
+  },
+  {
+    order: [
+      "binaryPath",
+      "pythonPath",
+      "authMode",
+      "gcpProject",
+      "gcpLocation",
+      "bridgePath",
+      "homePath",
+      "launchArgs",
+      "toolPermission",
+      "enableTerminalSandbox",
+      "allowNonWorkspaceAccess",
+    ],
+  },
+);
+export type AntigravitySettings = typeof AntigravitySettings.Type;
+
 export const ObservabilitySettings = Schema.Struct({
   otlpTracesUrl: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
   otlpMetricsUrl: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
@@ -392,6 +536,7 @@ export const ServerSettings = Schema.Struct({
     claudeAgent: ClaudeSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
     githubCopilot: GithubCopilotSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
     opencode: OpenCodeSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
+    antigravity: AntigravitySettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
   }).pipe(Schema.withDecodingDefault(Effect.succeed({}))),
   // New driver-agnostic instance map. Keyed by `ProviderInstanceId`; values
   // are `ProviderInstanceConfig` envelopes. The driver-specific config blob
@@ -468,6 +613,22 @@ const ClaudeSettingsPatch = Schema.Struct({
   launchArgs: Schema.optionalKey(TrimmedString),
 });
 
+const AntigravitySettingsPatch = Schema.Struct({
+  enabled: Schema.optionalKey(Schema.Boolean),
+  binaryPath: Schema.optionalKey(TrimmedString),
+  pythonPath: Schema.optionalKey(TrimmedString),
+  authMode: Schema.optionalKey(TrimmedString),
+  gcpProject: Schema.optionalKey(TrimmedString),
+  gcpLocation: Schema.optionalKey(TrimmedString),
+  bridgePath: Schema.optionalKey(TrimmedString),
+  homePath: Schema.optionalKey(TrimmedString),
+  launchArgs: Schema.optionalKey(TrimmedString),
+  toolPermission: Schema.optionalKey(TrimmedString),
+  enableTerminalSandbox: Schema.optionalKey(Schema.Boolean),
+  allowNonWorkspaceAccess: Schema.optionalKey(Schema.Boolean),
+  customModels: Schema.optionalKey(Schema.Array(Schema.String)),
+});
+
 export const ServerSettingsPatch = Schema.Struct({
   // Server settings
   enableAssistantStreaming: Schema.optionalKey(Schema.Boolean),
@@ -488,6 +649,7 @@ export const ServerSettingsPatch = Schema.Struct({
       claudeAgent: Schema.optionalKey(ClaudeSettingsPatch),
       githubCopilot: Schema.optionalKey(GithubCopilotSettingsPatch),
       opencode: Schema.optionalKey(OpenCodeSettingsPatch),
+      antigravity: Schema.optionalKey(AntigravitySettingsPatch),
     }),
   ),
   // Whole-map replacement for the new instance config. Patching individual

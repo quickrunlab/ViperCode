@@ -1,4 +1,5 @@
 import {
+  AntigravitySettings,
   ClaudeSettings,
   CodexSettings,
   GithubCopilotSettings,
@@ -6,7 +7,14 @@ import {
   ProviderDriverKind,
 } from "@vipercode/contracts";
 import type * as Schema from "effect/Schema";
-import { ClaudeAI, GithubCopilotIcon, type Icon, OpenAI, OpenCodeIcon } from "../Icons";
+import {
+  AntigravityIcon,
+  ClaudeAI,
+  GithubCopilotIcon,
+  type Icon,
+  OpenAI,
+  OpenCodeIcon,
+} from "../Icons";
 
 type ProviderSettingsSchema = {
   readonly fields: Readonly<Record<string, Schema.Top>>;
@@ -58,6 +66,13 @@ export const PROVIDER_CLIENT_DEFINITIONS: readonly ProviderClientDefinition[] = 
     label: "OpenCode",
     icon: OpenCodeIcon,
     settingsSchema: OpenCodeSettings,
+  },
+  {
+    value: ProviderDriverKind.make("antigravity"),
+    label: "Antigravity",
+    icon: AntigravityIcon,
+    badgeLabel: "SDK",
+    settingsSchema: AntigravitySettings,
   },
 ];
 

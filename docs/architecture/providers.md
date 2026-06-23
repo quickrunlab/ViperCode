@@ -13,7 +13,7 @@ Methods mirror the `NativeApi` interface defined in `@vipercode/contracts`:
 - `providers.respondToRequest`, `providers.stopSession`
 - `shell.openInEditor`, `server.getConfig`
 
-Codex is the only implemented provider. `claudeCode` is reserved in contracts/UI.
+Implemented drivers: Codex, Claude (`claudeAgent`), GitHub Copilot, OpenCode, and Antigravity. Antigravity uses a ViperCode-owned Python bridge over the `google-antigravity` SDK for session start, streaming text/reasoning, tool lifecycle events, approvals, user-input requests, attachments, and conversation-ID resume cursors. Drivers are registered in `apps/server/src/provider/builtInDrivers.ts`; `ProviderDriverKind` is an open slug, so unknown/fork drivers round-trip and degrade to an "unavailable" shadow snapshot rather than crashing.
 
 ## Client transport
 

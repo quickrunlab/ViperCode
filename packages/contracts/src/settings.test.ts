@@ -64,6 +64,55 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   });
 });
 
+describe("ServerSettings.providers.antigravity", () => {
+  it("hydrates Antigravity defaults for legacy configs without the key", () => {
+    const decoded = decodeServerSettings({});
+    expect(decoded.providers.antigravity.enabled).toBe(true);
+    expect(decoded.providers.antigravity.binaryPath).toBe("agy");
+    expect(decoded.providers.antigravity.pythonPath).toBe("python");
+    expect(decoded.providers.antigravity.authMode).toBe("google-oauth");
+    expect(decoded.providers.antigravity.gcpProject).toBe("");
+    expect(decoded.providers.antigravity.gcpLocation).toBe("us-central1");
+    expect(decoded.providers.antigravity.toolPermission).toBe("request-review");
+    expect(decoded.providers.antigravity.enableTerminalSandbox).toBe(true);
+    expect(decoded.providers.antigravity.allowNonWorkspaceAccess).toBe(false);
+    expect(decoded.providers.antigravity.customModels).toEqual([]);
+  });
+
+  it("coerces empty CLI/python paths back to their defaults", () => {
+    const decoded = decodeServerSettings({
+      providers: { antigravity: { binaryPath: "", pythonPath: "" } },
+    });
+    expect(decoded.providers.antigravity.binaryPath).toBe("agy");
+    expect(decoded.providers.antigravity.pythonPath).toBe("python");
+  });
+
+  it("accepts and trims Antigravity patch fields", () => {
+    const patch = decodeServerSettingsPatch({
+      providers: {
+        antigravity: {
+          binaryPath: "  /opt/agy/bin/agy  ",
+          pythonPath: "  /usr/bin/python3  ",
+          authMode: "  google-oauth  ",
+          gcpProject: "  viper-project  ",
+          gcpLocation: "  global  ",
+          toolPermission: "  proceed-in-sandbox  ",
+          allowNonWorkspaceAccess: true,
+          enableTerminalSandbox: false,
+        },
+      },
+    });
+    expect(patch.providers?.antigravity?.binaryPath).toBe("/opt/agy/bin/agy");
+    expect(patch.providers?.antigravity?.pythonPath).toBe("/usr/bin/python3");
+    expect(patch.providers?.antigravity?.authMode).toBe("google-oauth");
+    expect(patch.providers?.antigravity?.gcpProject).toBe("viper-project");
+    expect(patch.providers?.antigravity?.gcpLocation).toBe("global");
+    expect(patch.providers?.antigravity?.toolPermission).toBe("proceed-in-sandbox");
+    expect(patch.providers?.antigravity?.allowNonWorkspaceAccess).toBe(true);
+    expect(patch.providers?.antigravity?.enableTerminalSandbox).toBe(false);
+  });
+});
+
 describe("ServerSettings worktree defaults", () => {
   it("defaults start-from-origin off for legacy configs", () => {
     expect(decodeServerSettings({}).newWorktreesStartFromOrigin).toBe(false);
