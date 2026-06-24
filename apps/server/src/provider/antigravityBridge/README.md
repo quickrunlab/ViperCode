@@ -44,9 +44,15 @@ auth mode is `google-oauth`, which maps to SDK Vertex/ADC configuration when
 project/location are set: `LocalAgentConfig(vertex=True, project=...,
 location=...)`. If project/location are absent, `google-oauth` can reuse an
 explicit OAuth bearer token (`AGY_OAUTH_TOKEN`, `ANTIGRAVITY_OAUTH_TOKEN`,
-`ANTIGRAVITY_ACCESS_TOKEN`, or `GOOGLE_OAUTH_ACCESS_TOKEN`) or a readable
-Antigravity CLI OAuth profile. `agy-oauth` forces token/profile reuse. `api-key`
-mode is available as an explicit fallback and relies on `GEMINI_API_KEY`.
+`ANTIGRAVITY_ACCESS_TOKEN`, or `GOOGLE_OAUTH_ACCESS_TOKEN`), a refresh token
+(`AGY_OAUTH_REFRESH_TOKEN` or `ANTIGRAVITY_REFRESH_TOKEN`) when paired with
+`ANTIGRAVITY_OAUTH_CLIENT_ID` and `ANTIGRAVITY_OAUTH_CLIENT_SECRET`, or the readable
+Antigravity CLI token profile at
+`~/.gemini/antigravity-cli/antigravity-oauth-token`. Stale or missing CLI token
+profiles do not block default `google-oauth`; the bridge falls back to the
+SDK's own default auth path. `agy-oauth` forces token/profile reuse and reports
+an actionable setup error if no usable token can be found. `api-key` mode is
+available as an explicit fallback and relies on `GEMINI_API_KEY`.
 
 ## Requirements
 

@@ -11,6 +11,7 @@ the Node side may send replies, interrupts, or stop requests.
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 import inspect
 import json
 import mimetypes
@@ -23,6 +24,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Optional, Sequence
 
 PROTOCOL_VERSION = 1
+
+GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 SUPPORTED_IMAGE_MIME_TYPES = {
     "image/bmp",
@@ -282,14 +285,14 @@ def _oauth_profile_candidates(request: Dict[str, Any]) -> list[Path]:
         seen_roots.add(key)
         candidates.extend(
             [
-                root / "oauth_creds.json",
-                root / "google_credentials",
-                root / "auth.json",
-                root / "antigravity-cli" / "oauth_creds.json",
                 root / "antigravity-cli" / "antigravity-oauth-token",
+                root / "antigravity-cli" / "oauth_creds.json",
                 root / "antigravity-cli" / "google_credentials",
                 root / "antigravity-cli" / "auth.json",
                 root / "antigravity-cli" / "config.json",
+                root / "oauth_creds.json",
+                root / "google_credentials",
+                root / "auth.json",
             ]
         )
 
@@ -308,11 +311,15 @@ def _profile_expired(data: Dict[str, Any]) -> bool:
     if raw is None:
         return False
     try:
-        expiry = float(raw)
+        if isinstance(raw, str) and not raw.strip().replace(".", "", 1).isdigit():
+            parsed = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+            expiry = parsed.timestamp()
+        else:
+            expiry = float(raw)
+            if expiry > 10_000_000_000:
+                expiry = expiry / 1000
     except (TypeError, ValueError):
         return False
-    if expiry > 10_000_000_000:
-        expiry = expiry / 1000
     return expiry <= time.time() + 60
 
 
@@ -326,6 +333,15 @@ def _direct_oauth_access_token() -> Optional[tuple[str, str]]:
         value = os.environ.get(name)
         if isinstance(value, str) and value.strip():
             return value.strip(), f"environment:{name}"
+    for name in ("AGY_OAUTH_REFRESH_TOKEN", "ANTIGRAVITY_REFRESH_TOKEN"):
+        value = os.environ.get(name)
+        if isinstance(value, str) and value.strip():
+            client_id, client_secret = _oauth_refresh_client({})
+            if client_id and client_secret:
+                refreshed = _refresh_oauth_token(value.strip(), client_id, client_secret)
+                token = refreshed.get("access_token") if refreshed else None
+                if isinstance(token, str) and token.strip():
+                    return token.strip(), f"environment:{name}"
     return None
 
 
@@ -352,7 +368,96 @@ def _extract_access_token(data: Dict[str, Any]) -> Optional[tuple[str, Dict[str,
     return None
 
 
-def _load_cli_oauth_access_token(request: Dict[str, Any]) -> tuple[str, str]:
+def _oauth_refresh_client(data: Dict[str, Any], path: Optional[Path] = None) -> tuple[str, str]:
+    client_id = (
+        data.get("client_id")
+        or data.get("clientId")
+        or os.environ.get("ANTIGRAVITY_OAUTH_CLIENT_ID")
+    )
+    client_secret = (
+        data.get("client_secret")
+        or data.get("clientSecret")
+        or os.environ.get("ANTIGRAVITY_OAUTH_CLIENT_SECRET")
+    )
+    if isinstance(client_id, str) and isinstance(client_secret, str) and client_id and client_secret:
+        return client_id, client_secret
+    return "", ""
+
+
+def _refresh_oauth_token(
+    refresh_token: str, client_id: str, client_secret: str
+) -> Optional[Dict[str, Any]]:
+    try:
+        import urllib.parse
+        import urllib.request
+
+        body = urllib.parse.urlencode(
+            {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request(GOOGLE_OAUTH_TOKEN_URL, data=body, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as response:
+            if response.status != 200:
+                return None
+            data = json.loads(response.read().decode("utf-8"))
+            return data if isinstance(data, dict) else None
+    except Exception as exc:
+        _log(f"Could not refresh Antigravity OAuth token: {exc}")
+        return None
+
+
+def _refresh_cli_oauth_profile(
+    data: Dict[str, Any], token_payload: Dict[str, Any], path: Path
+) -> Optional[str]:
+    refresh_token = token_payload.get("refresh_token") or token_payload.get("refreshToken")
+    if not isinstance(refresh_token, str) or not refresh_token.strip():
+        return None
+    client_id, client_secret = _oauth_refresh_client(data, path)
+    if not client_id or not client_secret:
+        return None
+
+    refreshed = _refresh_oauth_token(refresh_token.strip(), client_id, client_secret)
+    if refreshed is None:
+        return None
+
+    access_token = refreshed.get("access_token")
+    if not isinstance(access_token, str) or not access_token.strip():
+        return None
+
+    expires_in = refreshed.get("expires_in")
+    try:
+        expires_at = time.time() + float(expires_in)
+    except (TypeError, ValueError):
+        expires_at = time.time() + 3600
+
+    token_payload["access_token"] = access_token.strip()
+    token_payload["expiry"] = (
+        datetime.fromtimestamp(expires_at, tz=timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+    token_payload["expiry_date"] = int(expires_at * 1000)
+    data["access_token"] = data.get("access_token", access_token.strip())
+    if path.name == "antigravity-oauth-token":
+        data["token"] = token_payload
+
+    try:
+        temp_path = path.with_name(f"{path.name}.tmp")
+        temp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        temp_path.replace(path)
+    except OSError as exc:
+        _log(f"Could not save refreshed Antigravity CLI OAuth profile {path}: {exc}")
+
+    return access_token.strip()
+
+
+def _load_cli_oauth_access_token(
+    request: Dict[str, Any], *, require_usable_profile: bool = True
+) -> Optional[tuple[str, str]]:
     direct = _direct_oauth_access_token()
     if direct is not None:
         return direct
@@ -379,14 +484,23 @@ def _load_cli_oauth_access_token(request: Dict[str, Any]) -> tuple[str, str]:
         token, token_payload = extracted
         if _profile_expired(token_payload):
             expired_profile_found = True
+            refreshed = _refresh_cli_oauth_profile(data, token_payload, path)
+            if refreshed is not None:
+                return refreshed, str(path)
             continue
         return token, str(path)
+
+    if not require_usable_profile:
+        return None
 
     if expired_profile_found:
         raise BridgeRequestError(
             "Antigravity CLI OAuth profile was found but its access token is expired. "
-            "Run `agy` again to refresh sign-in, provide AGY_OAUTH_TOKEN, or configure "
-            "OAuth/ADC project auth.",
+            "Run `agy -p hello` to refresh sign-in, provide AGY_OAUTH_TOKEN or "
+            "ANTIGRAVITY_ACCESS_TOKEN, or configure OAuth/ADC project auth. If you "
+            "only see ~/.gemini/oauth_creds.json, that is a Gemini CLI profile; the "
+            "Antigravity CLI token is expected at "
+            "~/.gemini/antigravity-cli/antigravity-oauth-token.",
             "cli_oauth_profile_expired",
         )
     raise BridgeRequestError(
@@ -720,32 +834,37 @@ class Bridge:
                 config_kwargs["project"] = project
                 config_kwargs["location"] = location
             else:
-                try:
-                    access_token, _profile_path = _load_cli_oauth_access_token(request)
-                except BridgeRequestError as exc:
-                    # Preserve the specific profile-not-found/expired guidance
-                    # (which names AGY_OAUTH_TOKEN and the CLI profile paths) and
-                    # its code, just appending the ADC alternative. Re-wrapping
-                    # into a generic message dropped actionable setup steps.
-                    raise BridgeRequestError(
-                        f"{exc.message} Alternatively, set gcpProject/gcpLocation and run "
-                        "`gcloud auth application-default login` to use OAuth/ADC.",
-                        exc.code,
-                    ) from exc
-                base_url = _request_first(
-                    request,
-                    "geminiBaseUrl",
-                    "ANTIGRAVITY_GEMINI_BASE_URL",
-                    "GEMINI_API_BASE_URL",
-                ) or "https://generativelanguage.googleapis.com"
-                endpoint = types.GeminiAPIEndpoint(
-                    base_url=base_url,
-                    http_headers={"Authorization": f"Bearer {access_token}"},
-                )
-                config_kwargs.pop("model", None)
-                config_kwargs["models"] = _models_for_endpoint(types, model_name, endpoint, image_model)
+                token_profile = _load_cli_oauth_access_token(request, require_usable_profile=False)
+                if token_profile is not None:
+                    access_token, _profile_path = token_profile
+                    base_url = _request_first(
+                        request,
+                        "geminiBaseUrl",
+                        "ANTIGRAVITY_GEMINI_BASE_URL",
+                        "GEMINI_API_BASE_URL",
+                    ) or "https://generativelanguage.googleapis.com"
+                    endpoint = types.GeminiAPIEndpoint(
+                        base_url=base_url,
+                        http_headers={"Authorization": f"Bearer {access_token}"},
+                    )
+                    config_kwargs.pop("model", None)
+                    config_kwargs["models"] = _models_for_endpoint(
+                        types, model_name, endpoint, image_model
+                    )
+                else:
+                    _log(
+                        "No usable Antigravity CLI OAuth token profile was found; "
+                        "falling back to the SDK default auth path for google-oauth."
+                    )
         elif auth_mode in {"agy-oauth", "cli-oauth", "antigravity-cli-oauth"}:
-            access_token, _profile_path = _load_cli_oauth_access_token(request)
+            token_profile = _load_cli_oauth_access_token(request)
+            if token_profile is None:
+                raise BridgeRequestError(
+                    "Antigravity OAuth credentials were not found in an explicit bearer-token "
+                    "environment variable or a readable CLI token profile.",
+                    "cli_oauth_profile_not_found",
+                )
+            access_token, _profile_path = token_profile
             project = _request_first(
                 request,
                 "gcpProject",
@@ -796,7 +915,15 @@ class Bridge:
                 config_kwargs["location"] = location
             else:
                 try:
-                    access_token, _profile_path = _load_cli_oauth_access_token(request)
+                    token_profile = _load_cli_oauth_access_token(
+                        request, require_usable_profile=False
+                    )
+                    if token_profile is None:
+                        raise BridgeRequestError(
+                            "No usable Antigravity CLI OAuth token profile was found.",
+                            "cli_oauth_profile_not_found",
+                        )
+                    access_token, _profile_path = token_profile
                     base_url = _request_first(
                         request,
                         "geminiBaseUrl",

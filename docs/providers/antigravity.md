@@ -77,22 +77,30 @@ location=...)`.
 Viper Code also supports best-effort Antigravity CLI OAuth profile reuse. If
 Auth mode is `google-oauth` and project/location are not configured, or Auth
 mode is explicitly set to `agy-oauth`, the bridge looks for a readable CLI OAuth
-profile or an explicit bearer token. Bearer-token env vars are
+profile or an explicit bearer token. The normal Antigravity CLI token profile is
+`~/.gemini/antigravity-cli/antigravity-oauth-token`; the older
+`~/.gemini/oauth_creds.json` file belongs to Gemini CLI and is only checked as a
+legacy fallback. Bearer-token env vars are
 `AGY_OAUTH_TOKEN`, `ANTIGRAVITY_OAUTH_TOKEN`, `ANTIGRAVITY_ACCESS_TOKEN`, or
-`GOOGLE_OAUTH_ACCESS_TOKEN`. Readable profiles are discovered from
+`GOOGLE_OAUTH_ACCESS_TOKEN`. Refresh-token env vars are
+`AGY_OAUTH_REFRESH_TOKEN` and `ANTIGRAVITY_REFRESH_TOKEN`; refreshing from those
+requires `ANTIGRAVITY_OAUTH_CLIENT_ID` and `ANTIGRAVITY_OAUTH_CLIENT_SECRET`.
+Readable profiles are discovered from
 `ANTIGRAVITY_CLI_OAUTH_PROFILE`, `ANTIGRAVITY_CLI_OAUTH_TOKEN_FILE`,
-`GEMINI_OAUTH_CREDS`, `<Antigravity home path>/oauth_creds.json`,
-`<Antigravity home path>/google_credentials`,
-`<Antigravity home path>/auth.json`,
-`<Antigravity home path>/antigravity-cli/oauth_creds.json`,
+`GEMINI_OAUTH_CREDS`,
 `<Antigravity home path>/antigravity-cli/antigravity-oauth-token`,
+`<Antigravity home path>/antigravity-cli/oauth_creds.json`,
 `<Antigravity home path>/antigravity-cli/google_credentials`,
 `<Antigravity home path>/antigravity-cli/auth.json`,
 `<Antigravity home path>/antigravity-cli/config.json`,
-`~/.gemini/oauth_creds.json`, or the same `antigravity-cli/*` paths under
-`~/.gemini`. Only the access token is used and it is never logged. Expired token
-profiles return a setup error; run `agy` again to refresh sign-in or provide a
-fresh bearer token.
+`<Antigravity home path>/oauth_creds.json`,
+`<Antigravity home path>/google_credentials`,
+`<Antigravity home path>/auth.json`, or the same paths under `~/.gemini`. Only
+the access token is used and it is never logged. Expired Antigravity token
+profiles are refreshed when a refresh token is available. For default
+`google-oauth`, stale or missing CLI profiles do not block startup; the bridge
+falls back to the SDK's own auth path. Explicit `agy-oauth` reports a setup
+error if no usable token can be found.
 
 API-key auth remains available as an explicit fallback by setting Auth mode to
 `api-key` and providing `GEMINI_API_KEY`.
@@ -166,10 +174,10 @@ Non-workspace access and `always-proceed` are never enabled silently.
 - **Wrong Python detected.** Set `Python path` to an absolute path (for example
   `/usr/bin/python3` or a virtualenv's `python`).
 - **OAuth setup issues.** Set GCP project/location and run
-  `gcloud auth application-default login`, set `AGY_OAUTH_TOKEN`, or run `agy`
-  again to refresh a readable CLI OAuth profile. A machine can be signed into
-  `agy` while still having no readable profile if the CLI stored credentials
-  only in the OS keyring.
+  `gcloud auth application-default login`, set `AGY_OAUTH_TOKEN`, or run
+  `agy -p hello` to create or refresh the readable Antigravity CLI token
+  profile. A machine can be signed into `agy` while still having no readable
+  profile if the CLI stored credentials only in the OS keyring.
 - **API key fallback issues.** Set Auth mode to `api-key` and provide
   `GEMINI_API_KEY` in the provider or server environment.
 
