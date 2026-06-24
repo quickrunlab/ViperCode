@@ -92,9 +92,16 @@ type EventBaseInput = {
 const nowIso = Effect.map(DateTime.now, DateTime.formatIso);
 
 function defaultBridgePath(): string {
-  return fileURLToPath(
+  // Resolve across both layouts, picking the first that exists on disk:
+  //   - packaged build: the server is bundled to apps/server/dist/<chunk>.mjs
+  //     and the build copies the bridge to dist/antigravityBridge/ (sibling).
+  //   - dev/source: this module is apps/server/src/provider/Layers/, so the
+  //     bridge is one directory up under provider/antigravityBridge/.
+  const candidates = [
+    new URL("./antigravityBridge/vipercode_antigravity_bridge.py", import.meta.url),
     new URL("../antigravityBridge/vipercode_antigravity_bridge.py", import.meta.url),
-  );
+  ].map((url) => fileURLToPath(url));
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[candidates.length - 1]!;
 }
 
 function bridgePathFor(settings: AntigravitySettings): string {

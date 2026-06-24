@@ -188,6 +188,18 @@ const buildCmd = Command.make(
       } else {
         yield* Effect.logWarning("[cli] Web dist not found — skipping client bundle.");
       }
+
+      // The Antigravity Python bridge is a runtime asset the bundler does not
+      // pull in. Copy it next to the bundle so the packaged app can spawn it
+      // (see defaultBridgePath in AntigravityAdapter).
+      const bridgeSource = path.join(serverDir, "src/provider/antigravityBridge");
+      const bridgeTarget = path.join(serverDir, "dist/antigravityBridge");
+      if (yield* fs.exists(bridgeSource)) {
+        yield* fs.copy(bridgeSource, bridgeTarget);
+        yield* Effect.log("[cli] Copied Antigravity bridge into dist/antigravityBridge");
+      } else {
+        yield* Effect.logWarning("[cli] Antigravity bridge source not found — skipping.");
+      }
     }),
 ).pipe(Command.withDescription("Build the server package (tsdown + bundle web client)."));
 
