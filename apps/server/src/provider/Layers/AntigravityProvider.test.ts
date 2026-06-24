@@ -160,7 +160,7 @@ Available models:
     }),
   );
 
-  it.effect("explains OS-keyring-only auth when forced CLI OAuth has no token", () =>
+  it.effect("explains agy auth refresh when forced CLI OAuth has no readable token", () =>
     Effect.gen(function* () {
       const snapshot = yield* probe({ authMode: "agy-oauth" }, (command, args) =>
         command === "python"
@@ -171,8 +171,8 @@ Available models:
       );
       expect(snapshot.status).toBe("warning");
       expect(snapshot.auth.status).toBe("unauthenticated");
-      expect(snapshot.message).toContain("OS keyring");
-      expect(snapshot.message).toContain("AGY_OAUTH_TOKEN");
+      expect(snapshot.message).toContain("agy");
+      expect(snapshot.message).toContain("keyring");
     }),
   );
 

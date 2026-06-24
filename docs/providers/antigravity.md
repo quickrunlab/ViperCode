@@ -6,9 +6,11 @@ bridge, streams text and reasoning deltas, surfaces tool lifecycle events,
 routes Antigravity permission and user-input prompts through Viper Code, and
 stores SDK conversation IDs as resume cursors.
 
-Antigravity is SDK-first: the `agy` CLI handles install, first-run product
-sign-in, and version checks, while the `google-antigravity` Python SDK drives
-sessions through a small Viper Code-owned bridge process.
+Antigravity uses the Python SDK for API-key and Vertex/ADC-backed sessions. For
+personal `agy` OAuth without GCP project/location, Viper Code uses the
+authenticated `agy -p` CLI path and reads model output from the CLI transcript
+store, because the current SDK validates Gemini API-key endpoints before it can
+reuse `agy` consumer OAuth.
 
 ## Install The CLI
 
@@ -80,7 +82,8 @@ mode is explicitly set to `agy-oauth`, the bridge looks for a readable CLI OAuth
 profile or an explicit bearer token. The normal Antigravity CLI token profile is
 `~/.gemini/antigravity-cli/antigravity-oauth-token`; the older
 `~/.gemini/oauth_creds.json` file belongs to Gemini CLI and is only checked as a
-legacy fallback. Bearer-token env vars are
+legacy fallback. On Windows, Viper Code can also reuse the same Credential
+Manager entry that `agy` uses: `gemini:antigravity`. Bearer-token env vars are
 `AGY_OAUTH_TOKEN`, `ANTIGRAVITY_OAUTH_TOKEN`, `ANTIGRAVITY_ACCESS_TOKEN`, or
 `GOOGLE_OAUTH_ACCESS_TOKEN`. Refresh-token env vars are
 `AGY_OAUTH_REFRESH_TOKEN` and `ANTIGRAVITY_REFRESH_TOKEN`; refreshing from those
@@ -98,9 +101,9 @@ Readable profiles are discovered from
 `<Antigravity home path>/auth.json`, or the same paths under `~/.gemini`. Only
 the access token is used and it is never logged. Expired Antigravity token
 profiles are refreshed when a refresh token is available. For default
-`google-oauth`, stale or missing CLI profiles do not block startup; the bridge
-falls back to the SDK's own auth path. Explicit `agy-oauth` reports a setup
-error if no usable token can be found.
+`google-oauth` without project/location, Viper Code uses `agy -p` and the CLI
+transcript store instead of the SDK Gemini API-key path. Viper Code does not
+fall back to `GEMINI_API_KEY` unless Auth mode is explicitly set to `api-key`.
 
 API-key auth remains available as an explicit fallback by setting Auth mode to
 `api-key` and providing `GEMINI_API_KEY`.
@@ -176,8 +179,11 @@ Non-workspace access and `always-proceed` are never enabled silently.
 - **OAuth setup issues.** Set GCP project/location and run
   `gcloud auth application-default login`, set `AGY_OAUTH_TOKEN`, or run
   `agy -p hello` to create or refresh the readable Antigravity CLI token
-  profile. A machine can be signed into `agy` while still having no readable
-  profile if the CLI stored credentials only in the OS keyring.
+  profile/keyring entry. On Windows, Viper Code reads the `agy` keyring target
+  `gemini:antigravity` directly.
+- **No-project `google-oauth` appears slower than SDK mode.** This path shells
+  out to `agy -p` and reads the CLI transcript after the command completes, so
+  it is authenticated like the CLI but does not stream token-by-token.
 - **API key fallback issues.** Set Auth mode to `api-key` and provide
   `GEMINI_API_KEY` in the provider or server environment.
 

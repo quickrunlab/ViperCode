@@ -17,6 +17,7 @@ import json
 import mimetypes
 import os
 from pathlib import Path
+import subprocess
 import sys
 import time
 import traceback
@@ -368,6 +369,121 @@ def _extract_access_token(data: Dict[str, Any]) -> Optional[tuple[str, Dict[str,
     return None
 
 
+def _parse_oauth_profile(raw: str) -> Optional[Dict[str, Any]]:
+    raw = raw.strip()
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = {"access_token": raw}
+    return data if isinstance(data, dict) else None
+
+
+def _windows_credential_targets(request: Dict[str, Any]) -> list[str]:
+    targets: list[str] = []
+    explicit = _request_first(
+        request,
+        "keyringTarget",
+        "ANTIGRAVITY_KEYRING_TARGET",
+        "AGY_KEYRING_TARGET",
+    )
+    if explicit:
+        targets.append(explicit)
+    targets.extend(["gemini:antigravity", "LegacyGeneric:target=gemini:antigravity"])
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for target in targets:
+        if target not in seen:
+            seen.add(target)
+            deduped.append(target)
+    return deduped
+
+
+def _read_windows_credential_text(target: str) -> Optional[str]:
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class CREDENTIALW(ctypes.Structure):
+            _fields_ = [
+                ("Flags", wintypes.DWORD),
+                ("Type", wintypes.DWORD),
+                ("TargetName", wintypes.LPWSTR),
+                ("Comment", wintypes.LPWSTR),
+                ("LastWritten", wintypes.FILETIME),
+                ("CredentialBlobSize", wintypes.DWORD),
+                ("CredentialBlob", ctypes.POINTER(ctypes.c_byte)),
+                ("Persist", wintypes.DWORD),
+                ("AttributeCount", wintypes.DWORD),
+                ("Attributes", ctypes.c_void_p),
+                ("TargetAlias", wintypes.LPWSTR),
+                ("UserName", wintypes.LPWSTR),
+            ]
+
+        credential_ptr_type = ctypes.POINTER(CREDENTIALW)
+        advapi32 = ctypes.WinDLL("Advapi32", use_last_error=True)
+        advapi32.CredReadW.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            ctypes.POINTER(credential_ptr_type),
+        ]
+        advapi32.CredReadW.restype = wintypes.BOOL
+        advapi32.CredFree.argtypes = [ctypes.c_void_p]
+        advapi32.CredFree.restype = None
+
+        credential = credential_ptr_type()
+        if not advapi32.CredReadW(target, 1, 0, ctypes.byref(credential)):
+            return None
+        try:
+            contents = credential.contents
+            blob = ctypes.string_at(contents.CredentialBlob, contents.CredentialBlobSize)
+        finally:
+            advapi32.CredFree(credential)
+        for encoding in ("utf-8", "utf-16-le"):
+            try:
+                text = blob.decode(encoding).strip("\x00").strip()
+            except UnicodeDecodeError:
+                continue
+            if text:
+                return text
+    except Exception as exc:
+        _log(f"Could not read Antigravity Windows credential target {target}: {exc}")
+    return None
+
+
+def _read_windows_keyring_oauth_profile(
+    request: Dict[str, Any],
+) -> Optional[tuple[Dict[str, Any], str]]:
+    for target in _windows_credential_targets(request):
+        raw = _read_windows_credential_text(target)
+        if raw is None:
+            continue
+        data = _parse_oauth_profile(raw)
+        if data is not None and _extract_access_token(data) is not None:
+            return data, f"windows-credential:{target}"
+    return None
+
+
+def _refresh_windows_keyring_with_agy(request: Dict[str, Any]) -> None:
+    cli_path = _request_first(request, "cliPath", "ANTIGRAVITY_CLI_PATH", "AGY_PATH") or "agy"
+    try:
+        subprocess.run(
+            [cli_path, "-p", "hello", "--print-timeout", "45s"],
+            cwd=str(Path(request.get("cwd") or Path.cwd())),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=60,
+            check=False,
+        )
+    except Exception as exc:
+        _log(f"Could not refresh Antigravity keyring via agy: {exc}")
+
+
 def _oauth_refresh_client(data: Dict[str, Any], path: Optional[Path] = None) -> tuple[str, str]:
     client_id = (
         data.get("client_id")
@@ -463,6 +579,26 @@ def _load_cli_oauth_access_token(
         return direct
 
     expired_profile_found = False
+    keyring_profile = _read_windows_keyring_oauth_profile(request)
+    if keyring_profile is not None:
+        data, source = keyring_profile
+        extracted = _extract_access_token(data)
+        if extracted is not None:
+            token, token_payload = extracted
+            if _profile_expired(token_payload):
+                expired_profile_found = True
+                _refresh_windows_keyring_with_agy(request)
+                refreshed_profile = _read_windows_keyring_oauth_profile(request)
+                if refreshed_profile is not None:
+                    refreshed_data, refreshed_source = refreshed_profile
+                    refreshed = _extract_access_token(refreshed_data)
+                    if refreshed is not None:
+                        refreshed_token, refreshed_payload = refreshed
+                        if not _profile_expired(refreshed_payload):
+                            return refreshed_token, refreshed_source
+            else:
+                return token, source
+
     for path in _oauth_profile_candidates(request):
         try:
             if not path.is_file():
@@ -472,11 +608,8 @@ def _load_cli_oauth_access_token(
             continue
         if not raw:
             continue
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            data = {"access_token": raw}
-        if not isinstance(data, dict):
+        data = _parse_oauth_profile(raw)
+        if data is None:
             continue
         extracted = _extract_access_token(data)
         if extracted is None:
@@ -521,13 +654,85 @@ def _models_for_endpoint(
 ) -> list[Any]:
     text_name = model_name or _env_first("ANTIGRAVITY_DEFAULT_MODEL") or "gemini-3.5-flash"
     models = [types.ModelTarget(name=text_name, types=[types.ModelType.TEXT], endpoint=endpoint)]
-    # The image target is opt-in: a wrong/renamed image model name would break
-    # the endpoint, so only register it when explicitly configured.
-    if image_model:
-        models.append(
-            types.ModelTarget(name=image_model, types=[types.ModelType.IMAGE], endpoint=endpoint)
-        )
+    image_name = image_model or _env_first("ANTIGRAVITY_IMAGE_MODEL") or "gemini-3.1-flash-image-preview"
+    models.append(types.ModelTarget(name=image_name, types=[types.ModelType.IMAGE], endpoint=endpoint))
     return models
+
+
+def _antigravity_app_data_dir(request_or_session: Any) -> Path:
+    if isinstance(request_or_session, BridgeSession):
+        return Path.home() / ".gemini" / "antigravity-cli"
+    if isinstance(request_or_session, dict):
+        explicit = _request_first(request_or_session, "appDataDir", "ANTIGRAVITY_HOME")
+        if explicit:
+            return Path(explicit).expanduser()
+    return Path.home() / ".gemini" / "antigravity-cli"
+
+
+def _conversation_id_from_cli_cache(app_data_dir: Path, cwd: str) -> Optional[str]:
+    path = app_data_dir / "cache" / "last_conversations.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    normalized_cwd = str(Path(cwd))
+    for key in (normalized_cwd, cwd):
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    normalized_lower = normalized_cwd.lower()
+    for key, value in data.items():
+        if isinstance(key, str) and key.lower() == normalized_lower and isinstance(value, str):
+            return value.strip() or None
+    return None
+
+
+def _cli_transcript_path(app_data_dir: Path, conversation_id: str) -> Path:
+    return (
+        app_data_dir
+        / "brain"
+        / conversation_id
+        / ".system_generated"
+        / "logs"
+        / "transcript.jsonl"
+    )
+
+
+def _read_cli_model_entries(
+    app_data_dir: Path, conversation_id: str, after_step: int
+) -> tuple[str, int]:
+    path = _cli_transcript_path(app_data_dir, conversation_id)
+    text_parts: list[str] = []
+    max_step = after_step
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return "", max_step
+    for line in lines:
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        step_index = entry.get("step_index")
+        if isinstance(step_index, int):
+            max_step = max(max_step, step_index)
+            if step_index <= after_step:
+                continue
+        source = str(entry.get("source") or "").upper()
+        entry_type = str(entry.get("type") or "").upper()
+        content = entry.get("content")
+        if source == "MODEL" and isinstance(content, str) and content.strip():
+            if "RESPONSE" in entry_type or entry_type in {"TEXT", "MESSAGE"}:
+                text_parts.append(content)
+    return "\n".join(text_parts).strip(), max_step
+
+
+def _cli_path_from_request(request: Dict[str, Any]) -> str:
+    return _request_first(request, "cliPath", "ANTIGRAVITY_CLI_PATH", "AGY_PATH") or "agy"
 
 
 def _accepted_kwargs(target: Any, kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -562,6 +767,12 @@ class BridgeSession:
     agent: Any
     loop: asyncio.AbstractEventLoop
     conversation_id: Optional[str] = None
+    cli_runtime: bool = False
+    cli_path: str = "agy"
+    cli_model: Optional[str] = None
+    cli_app_data_dir: Optional[str] = None
+    cli_last_step_index: int = -1
+    cli_turn_count: int = 0
     current_turn_id: Optional[str] = None
     current_response: Any = None
     current_task: Optional[asyncio.Task[None]] = None
@@ -710,6 +921,46 @@ class Bridge:
             raise BridgeRequestError(f"Unknown Antigravity session: {session_id}", "session_not_found")
         return session
 
+    def _start_cli_session(
+        self,
+        request: Dict[str, Any],
+        *,
+        session_id: str,
+        cwd: str,
+        loop: asyncio.AbstractEventLoop,
+        model_name: Optional[str],
+    ) -> Dict[str, Any]:
+        app_data_dir = _antigravity_app_data_dir(request)
+        conversation_id = request.get("conversationId")
+        if not isinstance(conversation_id, str) or not conversation_id.strip():
+            conversation_id = _conversation_id_from_cli_cache(app_data_dir, cwd)
+        else:
+            conversation_id = conversation_id.strip()
+        last_step = -1
+        if conversation_id:
+            _text, last_step = _read_cli_model_entries(app_data_dir, conversation_id, -1)
+        session = BridgeSession(
+            session_id=session_id,
+            cwd=cwd,
+            agent=None,
+            loop=loop,
+            conversation_id=conversation_id,
+            cli_runtime=True,
+            cli_path=_cli_path_from_request(request),
+            cli_model=model_name,
+            cli_app_data_dir=str(app_data_dir),
+            cli_last_step_index=last_step,
+        )
+        self.sessions[session_id] = session
+        _emit(
+            {
+                "type": "session_started",
+                "sessionId": session_id,
+                "conversationId": conversation_id,
+            }
+        )
+        return {"sessionId": session_id, "conversationId": conversation_id}
+
     async def start_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
         from google.antigravity import Agent, CapabilitiesConfig, LocalAgentConfig, hooks, policy, types
 
@@ -814,6 +1065,7 @@ class Bridge:
             config_kwargs["model"] = model_name
         image_model = _request_first(request, "imageModel", "ANTIGRAVITY_IMAGE_MODEL")
         auth_mode = str(request.get("authMode") or "google-oauth").strip() or "google-oauth"
+        wants_cli_runtime = False
         if auth_mode in {"google-oauth", "vertex-adc", "adc", "oauth"}:
             project = _request_first(
                 request,
@@ -834,64 +1086,9 @@ class Bridge:
                 config_kwargs["project"] = project
                 config_kwargs["location"] = location
             else:
-                token_profile = _load_cli_oauth_access_token(request, require_usable_profile=False)
-                if token_profile is not None:
-                    access_token, _profile_path = token_profile
-                    base_url = _request_first(
-                        request,
-                        "geminiBaseUrl",
-                        "ANTIGRAVITY_GEMINI_BASE_URL",
-                        "GEMINI_API_BASE_URL",
-                    ) or "https://generativelanguage.googleapis.com"
-                    endpoint = types.GeminiAPIEndpoint(
-                        base_url=base_url,
-                        http_headers={"Authorization": f"Bearer {access_token}"},
-                    )
-                    config_kwargs.pop("model", None)
-                    config_kwargs["models"] = _models_for_endpoint(
-                        types, model_name, endpoint, image_model
-                    )
-                else:
-                    _log(
-                        "No usable Antigravity CLI OAuth token profile was found; "
-                        "falling back to the SDK default auth path for google-oauth."
-                    )
+                wants_cli_runtime = True
         elif auth_mode in {"agy-oauth", "cli-oauth", "antigravity-cli-oauth"}:
-            token_profile = _load_cli_oauth_access_token(request)
-            if token_profile is None:
-                raise BridgeRequestError(
-                    "Antigravity OAuth credentials were not found in an explicit bearer-token "
-                    "environment variable or a readable CLI token profile.",
-                    "cli_oauth_profile_not_found",
-                )
-            access_token, _profile_path = token_profile
-            project = _request_first(
-                request,
-                "gcpProject",
-                "GOOGLE_CLOUD_PROJECT",
-                "GCLOUD_PROJECT",
-                "CLOUDSDK_CORE_PROJECT",
-            )
-            location = _request_first(
-                request,
-                "gcpLocation",
-                "GOOGLE_CLOUD_LOCATION",
-                "GOOGLE_VERTEX_LOCATION",
-                "GOOGLE_CLOUD_REGION",
-            )
-            headers = {"Authorization": f"Bearer {access_token}"}
-            if project and location:
-                endpoint = types.VertexEndpoint(project=project, location=location, http_headers=headers)
-            else:
-                base_url = _request_first(
-                    request,
-                    "geminiBaseUrl",
-                    "ANTIGRAVITY_GEMINI_BASE_URL",
-                    "GEMINI_API_BASE_URL",
-                ) or "https://generativelanguage.googleapis.com"
-                endpoint = types.GeminiAPIEndpoint(base_url=base_url, http_headers=headers)
-            config_kwargs.pop("model", None)
-            config_kwargs["models"] = _models_for_endpoint(types, model_name, endpoint, image_model)
+            wants_cli_runtime = True
         elif auth_mode in {"api-key", "gemini-api-key"}:
             pass
         elif auth_mode == "auto":
@@ -914,35 +1111,16 @@ class Bridge:
                 config_kwargs["project"] = project
                 config_kwargs["location"] = location
             else:
-                try:
-                    token_profile = _load_cli_oauth_access_token(
-                        request, require_usable_profile=False
-                    )
-                    if token_profile is None:
-                        raise BridgeRequestError(
-                            "No usable Antigravity CLI OAuth token profile was found.",
-                            "cli_oauth_profile_not_found",
-                        )
-                    access_token, _profile_path = token_profile
-                    base_url = _request_first(
-                        request,
-                        "geminiBaseUrl",
-                        "ANTIGRAVITY_GEMINI_BASE_URL",
-                        "GEMINI_API_BASE_URL",
-                    ) or "https://generativelanguage.googleapis.com"
-                    endpoint = types.GeminiAPIEndpoint(
-                        base_url=base_url,
-                        http_headers={"Authorization": f"Bearer {access_token}"},
-                    )
-                    config_kwargs.pop("model", None)
-                    config_kwargs["models"] = _models_for_endpoint(types, model_name, endpoint, image_model)
-                except BridgeRequestError:
-                    pass
+                wants_cli_runtime = True
         else:
             if auth_mode not in {"api-key", "gemini-api-key"}:
                 raise BridgeRequestError(
                     f"Unsupported Antigravity auth mode: {auth_mode}", "invalid_auth_mode"
                 )
+        if wants_cli_runtime:
+            return self._start_cli_session(
+                request, session_id=session_id, cwd=cwd, loop=loop, model_name=model_name
+            )
         conversation_id = request.get("conversationId")
         if isinstance(conversation_id, str) and conversation_id.strip():
             config_kwargs["conversation_id"] = conversation_id.strip()
@@ -1012,6 +1190,9 @@ class Bridge:
         usage = None
         turn_items: list[Any] = []
         try:
+            if session.cli_runtime:
+                await self._run_cli_turn(session, turn_id, str(prompt))
+                return
             response = await session.agent.chat(prompt)
             session.current_response = response
             async for chunk in response.chunks:
@@ -1113,6 +1294,71 @@ class Bridge:
                     "sessionId": session.session_id,
                     "turnId": turn_id,
                     "stopReason": stop_reason,
+                }
+            )
+
+    async def _run_cli_turn(self, session: BridgeSession, turn_id: str, prompt: str) -> None:
+        app_data_dir = Path(session.cli_app_data_dir) if session.cli_app_data_dir else Path.home() / ".gemini" / "antigravity-cli"
+        before_step = session.cli_last_step_index
+        args = [session.cli_path]
+        if session.cli_model:
+            args.extend(["--model", session.cli_model])
+        if session.conversation_id:
+            args.extend(["--conversation", session.conversation_id])
+        elif session.cli_turn_count > 0:
+            args.append("--continue")
+        args.extend(["-p", prompt, "--print-timeout", "5m"])
+
+        def run_cli() -> subprocess.CompletedProcess[str]:
+            env = dict(os.environ)
+            if session.cli_app_data_dir:
+                env["ANTIGRAVITY_HOME"] = session.cli_app_data_dir
+            return subprocess.run(
+                args,
+                cwd=session.cwd,
+                env=env,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=360,
+                check=False,
+            )
+
+        result = await asyncio.to_thread(run_cli)
+        session.cli_turn_count += 1
+        if result.returncode != 0:
+            message = (result.stderr or result.stdout or "agy CLI turn failed.").strip()
+            raise BridgeRequestError(message[:1000], "agy_cli_failed")
+
+        conversation_id = _conversation_id_from_cli_cache(app_data_dir, session.cwd)
+        if conversation_id and conversation_id != session.conversation_id:
+            session.conversation_id = conversation_id
+            before_step = -1
+            _emit(
+                {
+                    "type": "conversation_id_changed",
+                    "sessionId": session.session_id,
+                    "conversationId": conversation_id,
+                }
+            )
+
+        text = (result.stdout or "").strip()
+        if session.conversation_id:
+            transcript_text, max_step = _read_cli_model_entries(
+                app_data_dir, session.conversation_id, before_step
+            )
+            session.cli_last_step_index = max(session.cli_last_step_index, max_step)
+            if transcript_text:
+                text = transcript_text
+
+        if text:
+            _emit(
+                {
+                    "type": "text_delta",
+                    "sessionId": session.session_id,
+                    "turnId": turn_id,
+                    "text": text,
                 }
             )
 
@@ -1294,6 +1540,10 @@ class Bridge:
                 pending.set_result({"__cancelled__": True})
         session.pending_permissions.clear()
         session.pending_questions.clear()
+        if session.agent is None:
+            if emit_exit:
+                _emit({"type": "session_exited", "sessionId": session.session_id, "code": 0})
+            return
         try:
             await session.agent.__aexit__(None, None, None)
         finally:

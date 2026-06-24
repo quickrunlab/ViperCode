@@ -386,7 +386,7 @@ export const AntigravitySettings = makeProviderSettingsSchema(
       Schema.annotateKey({
         title: "Auth mode",
         description:
-          "Authentication mode. google-oauth uses OAuth/ADC when project settings are present and can reuse an explicit OAuth bearer token or readable agy OAuth profile otherwise; agy-oauth forces OAuth token/profile reuse; api-key uses GEMINI_API_KEY as an optional fallback.",
+          "Authentication mode. google-oauth uses OAuth/ADC when project settings are present and can reuse agy OAuth from bearer tokens, Windows keyring, or readable CLI profiles otherwise; agy-oauth forces agy OAuth reuse; api-key uses GEMINI_API_KEY only when explicitly selected.",
         providerSettingsForm: {
           placeholder: ANTIGRAVITY_DEFAULT_AUTH_MODE,
           clearWhenEmpty: "omit",

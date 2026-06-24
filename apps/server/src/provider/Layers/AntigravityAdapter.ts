@@ -967,6 +967,7 @@ export const makeAntigravityAdapter = (
           ...(incomingConversationId ? { conversationId: incomingConversationId } : {}),
           saveDir,
           ...(appDataDir.length > 0 ? { appDataDir } : {}),
+          cliPath: settings.binaryPath,
           authMode: settings.authMode,
           ...(settings.gcpProject.trim().length > 0
             ? { gcpProject: settings.gcpProject.trim() }

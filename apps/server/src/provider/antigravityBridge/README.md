@@ -22,7 +22,8 @@ Implemented without third-party imports:
 | `initialize` | Returns `{ protocolVersion }`.                                |
 | `probe`      | Returns `{ sdkAvailable, sdkVersion, python }` for status UI. |
 
-Session methods lazily import `google.antigravity` and drive the live SDK:
+Session methods lazily import `google.antigravity` and drive the live SDK for
+API-key and Vertex/ADC-backed sessions:
 
 - `start_session`
 - `send_turn`
@@ -46,13 +47,14 @@ location=...)`. If project/location are absent, `google-oauth` can reuse an
 explicit OAuth bearer token (`AGY_OAUTH_TOKEN`, `ANTIGRAVITY_OAUTH_TOKEN`,
 `ANTIGRAVITY_ACCESS_TOKEN`, or `GOOGLE_OAUTH_ACCESS_TOKEN`), a refresh token
 (`AGY_OAUTH_REFRESH_TOKEN` or `ANTIGRAVITY_REFRESH_TOKEN`) when paired with
-`ANTIGRAVITY_OAUTH_CLIENT_ID` and `ANTIGRAVITY_OAUTH_CLIENT_SECRET`, or the readable
-Antigravity CLI token profile at
-`~/.gemini/antigravity-cli/antigravity-oauth-token`. Stale or missing CLI token
-profiles do not block default `google-oauth`; the bridge falls back to the
-SDK's own default auth path. `agy-oauth` forces token/profile reuse and reports
-an actionable setup error if no usable token can be found. `api-key` mode is
-available as an explicit fallback and relies on `GEMINI_API_KEY`.
+`ANTIGRAVITY_OAUTH_CLIENT_ID` and `ANTIGRAVITY_OAUTH_CLIENT_SECRET`, the Windows
+Credential Manager entry `gemini:antigravity`, or the readable Antigravity CLI
+token profile at `~/.gemini/antigravity-cli/antigravity-oauth-token`.
+`google-oauth` does not fall back to API-key auth when project/location are
+absent. Instead, no-project `google-oauth`, `agy-oauth`, and `auto` use the
+authenticated `agy -p` CLI path and read model output from the CLI transcript
+store. `api-key` mode is available as an explicit fallback and relies on
+`GEMINI_API_KEY`.
 
 ## Requirements
 

@@ -276,7 +276,7 @@ function resolveAntigravityAuthStatus(
       label: hasOAuthCredential ? label : "Antigravity OAuth setup incomplete",
       setupWarning: hasOAuthCredential
         ? undefined
-        : "CLI OAuth auth is selected, but no explicit OAuth bearer token or readable Antigravity OAuth profile was found. If `agy` only stored auth in the OS keyring, set AGY_OAUTH_TOKEN or ANTIGRAVITY_CLI_OAUTH_PROFILE.",
+        : "CLI OAuth auth is selected, but no explicit OAuth bearer token or readable Antigravity OAuth profile was found. On Windows, ViperCode can also use the `agy` keyring target at runtime; run `agy -p hello` if sign-in needs refreshing.",
     };
   }
 
@@ -313,7 +313,7 @@ function resolveAntigravityAuthStatus(
       setupWarning:
         (project && location) || hasOAuthCredential
           ? undefined
-          : "OAuth auth is selected. Set GCP project/location and run `gcloud auth application-default login`, set AGY_OAUTH_TOKEN, or provide a readable `agy` OAuth profile. SDK sessions cannot automatically reuse OS-keyring-only CLI auth in this SDK build.",
+          : "OAuth auth is selected. Set GCP project/location and run `gcloud auth application-default login`, set AGY_OAUTH_TOKEN, provide a readable `agy` OAuth profile, or on Windows run `agy -p hello` so ViperCode can reuse the `agy` keyring target at runtime.",
     };
   }
 

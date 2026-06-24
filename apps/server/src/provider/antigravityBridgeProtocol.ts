@@ -54,6 +54,7 @@ export const StartSessionRequest = Schema.Struct({
   conversationId: Schema.optionalKey(Schema.String),
   saveDir: Schema.optionalKey(Schema.String),
   appDataDir: Schema.optionalKey(Schema.String),
+  cliPath: Schema.optionalKey(Schema.String),
   authMode: Schema.optionalKey(Schema.String),
   gcpProject: Schema.optionalKey(Schema.String),
   gcpLocation: Schema.optionalKey(Schema.String),
