@@ -53,11 +53,52 @@ const DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES: ModelCapabilities = createModelCap
   optionDescriptors: [],
 });
 
+// Models served by the Antigravity backend (the same backend the `agy` CLI
+// drives). The SDK exposes no list-models API and `agy models` is an
+// interactive TUI, so we ship the known set as defaults; users can still add
+// others via custom models. Reasoning tiers are encoded in the model id the way
+// the backend accepts them (e.g. `gemini-3.1-pro-high`), mirroring the CLI's
+// "Gemini 3.1 Pro (High)" picker entries.
 const BUILT_IN_ANTIGRAVITY_MODELS: ReadonlyArray<ServerProviderModel> = [
   {
     slug: "gemini-3.5-flash",
     name: "Gemini 3.5 Flash",
     shortName: "3.5 Flash",
+    isCustom: false,
+    capabilities: DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES,
+  },
+  {
+    slug: "gemini-3.1-pro-low",
+    name: "Gemini 3.1 Pro (Low)",
+    shortName: "3.1 Pro Low",
+    isCustom: false,
+    capabilities: DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES,
+  },
+  {
+    slug: "gemini-3.1-pro-high",
+    name: "Gemini 3.1 Pro (High)",
+    shortName: "3.1 Pro High",
+    isCustom: false,
+    capabilities: DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES,
+  },
+  {
+    slug: "claude-sonnet-4-6",
+    name: "Claude Sonnet 4.6 (Thinking)",
+    shortName: "Sonnet 4.6",
+    isCustom: false,
+    capabilities: DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES,
+  },
+  {
+    slug: "claude-opus-4-6-thinking",
+    name: "Claude Opus 4.6 (Thinking)",
+    shortName: "Opus 4.6",
+    isCustom: false,
+    capabilities: DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES,
+  },
+  {
+    slug: "gpt-oss-120b",
+    name: "GPT-OSS 120B",
+    shortName: "GPT-OSS 120B",
     isCustom: false,
     capabilities: DEFAULT_ANTIGRAVITY_MODEL_CAPABILITIES,
   },
