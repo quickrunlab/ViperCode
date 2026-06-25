@@ -57,14 +57,16 @@ store. `api-key` mode is available as an explicit fallback and relies on
 `GEMINI_API_KEY`.
 
 The CLI-backed runtime treats `agy -p` as a headless print-mode process: flags
-are passed before `-p`, the prompt is the final argument, and the bridge tails
-`~/.gemini/antigravity-cli/brain/<conversation>/.system_generated/logs/transcript.jsonl`
-while the process is running. Current `agy` builds do not expose a reliable
-token-by-token stdout stream for non-TTY callers, so transcript tailing is the
-only supported live path. The bridge always adds
-`--dangerously-skip-permissions` for CLI-backed sessions because headless
-`agy -p` cannot surface permission prompts to ViperCode; without that flag, a
-tool/file approval prompt can leave the turn waiting forever.
+are passed before `-p`, the prompt is the final argument, and the bridge waits
+for the CLI process to finish before emitting one final assistant text event.
+Current `agy` builds do not expose a reliable token-by-token stdout stream for
+non-TTY callers. When stdout is empty, the bridge reads the final model output
+from
+`~/.gemini/antigravity-cli/brain/<conversation>/.system_generated/logs/transcript.jsonl`.
+The bridge always adds `--dangerously-skip-permissions` for CLI-backed sessions
+because headless `agy -p` cannot surface permission prompts to ViperCode;
+without that flag, a tool/file approval prompt can leave the turn waiting
+forever.
 
 ## Requirements
 

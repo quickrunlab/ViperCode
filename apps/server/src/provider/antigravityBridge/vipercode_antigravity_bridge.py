@@ -1317,7 +1317,6 @@ class Bridge:
 
     async def _run_cli_turn(self, session: BridgeSession, turn_id: str, prompt: str) -> None:
         app_data_dir = Path(session.cli_app_data_dir) if session.cli_app_data_dir else Path.home() / ".gemini" / "antigravity-cli"
-        before_step = session.cli_last_step_index
         args = [session.cli_path]
         if session.cli_skip_permissions:
             args.append("--dangerously-skip-permissions")
@@ -1335,44 +1334,6 @@ class Bridge:
             env["ANTIGRAVITY_HOME"] = session.cli_app_data_dir
 
         process: Optional[subprocess.Popen[str]] = None
-        emitted_text = False
-
-        def emit_transcript_updates() -> bool:
-            nonlocal before_step, emitted_text
-            conversation_id = _conversation_id_from_cli_cache(app_data_dir, session.cwd)
-            if conversation_id and conversation_id != session.conversation_id:
-                session.conversation_id = conversation_id
-                before_step = -1
-                _emit(
-                    {
-                        "type": "conversation_id_changed",
-                        "sessionId": session.session_id,
-                        "conversationId": conversation_id,
-                    }
-                )
-
-            if not session.conversation_id:
-                return False
-
-            transcript_text, max_step = _read_cli_model_entries(
-                app_data_dir, session.conversation_id, before_step
-            )
-            if max_step > before_step:
-                before_step = max_step
-                session.cli_last_step_index = max(session.cli_last_step_index, max_step)
-            if not transcript_text:
-                return False
-            emitted_text = True
-            _emit(
-                {
-                    "type": "text_delta",
-                    "sessionId": session.session_id,
-                    "turnId": turn_id,
-                    "text": transcript_text,
-                }
-            )
-            return True
-
         try:
             process = await asyncio.to_thread(
                 subprocess.Popen,
@@ -1385,18 +1346,13 @@ class Bridge:
                 text=True,
                 **_subprocess_no_window_kwargs(),
             )
-
-            deadline = time.monotonic() + 370
-            while process.poll() is None:
-                if time.monotonic() >= deadline:
-                    process.kill()
-                    stdout, stderr = await asyncio.to_thread(process.communicate, timeout=10)
-                    message = (stderr or stdout or "agy CLI turn timed out.").strip()
-                    raise BridgeRequestError(message[:1000], "agy_cli_failed")
-                emit_transcript_updates()
-                await asyncio.sleep(0.35)
-
-            stdout, stderr = await asyncio.to_thread(process.communicate, timeout=10)
+            try:
+                stdout, stderr = await asyncio.to_thread(process.communicate, timeout=370)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, stderr = await asyncio.to_thread(process.communicate, timeout=10)
+                message = (stderr or stdout or "agy CLI turn timed out.").strip()
+                raise BridgeRequestError(message[:1000], "agy_cli_failed")
         except asyncio.CancelledError:
             if process is not None and process.poll() is None:
                 process.kill()
@@ -1408,10 +1364,28 @@ class Bridge:
             message = (stderr or stdout or "agy CLI turn failed.").strip()
             raise BridgeRequestError(message[:1000], "agy_cli_failed")
 
-        emit_transcript_updates()
-        text = (stdout or "").strip()
+        conversation_id = _conversation_id_from_cli_cache(app_data_dir, session.cwd)
+        if conversation_id and conversation_id != session.conversation_id:
+            session.conversation_id = conversation_id
+            session.cli_last_step_index = -1
+            _emit(
+                {
+                    "type": "conversation_id_changed",
+                    "sessionId": session.session_id,
+                    "conversationId": conversation_id,
+                }
+            )
 
-        if text and not emitted_text:
+        transcript_text = ""
+        if session.conversation_id:
+            transcript_text, max_step = _read_cli_model_entries(
+                app_data_dir, session.conversation_id, session.cli_last_step_index
+            )
+            session.cli_last_step_index = max(session.cli_last_step_index, max_step)
+
+        text = (transcript_text or stdout or "").strip()
+
+        if text:
             _emit(
                 {
                     "type": "text_delta",
@@ -1420,7 +1394,7 @@ class Bridge:
                     "text": text,
                 }
             )
-        elif not emitted_text:
+        else:
             raise BridgeRequestError(
                 "agy CLI completed without stdout or readable transcript output. "
                 "Run `agy --print-timeout 45s -p hello` once in a terminal to refresh "
